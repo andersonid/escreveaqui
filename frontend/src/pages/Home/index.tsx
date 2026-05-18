@@ -29,22 +29,9 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="space-y-1">
-          <h1 className="font-mono text-4xl font-bold tracking-tight">
-            escreve <span className="text-primary">aqui</span>
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            <a
-              href="https://github.com/Navelogic/escreveaqui"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground transition-colors"
-            >
-              Código aberto
-            </a>{" "}
-            • Feito no Brasil 🇧🇷
-          </p>
-        </div>
+        <h1 className="font-mono text-4xl font-bold tracking-tight">
+          escreve <span className="text-primary">aqui</span>
+        </h1>
 
         <form onSubmit={handleSubmit} className="flex items-center">
           <span className="flex h-10 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground whitespace-nowrap select-none">

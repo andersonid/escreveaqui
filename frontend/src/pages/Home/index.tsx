@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Modal from "@/components/Modal"
-import Contributors from "@/components/Contributors"
 
 export default function Home() {
   const [path, setPath] = useState("")
@@ -46,8 +45,6 @@ export default function Home() {
             • Feito no Brasil 🇧🇷
           </p>
         </div>
-
-        <Contributors />
 
         <form onSubmit={handleSubmit} className="flex items-center">
           <span className="flex h-10 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground whitespace-nowrap select-none">

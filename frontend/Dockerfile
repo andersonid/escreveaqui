@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM docker.io/node:22-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build
 
-FROM nginx:alpine AS runtime
+FROM docker.io/nginx:alpine AS runtime
 
 RUN rm /etc/nginx/conf.d/default.conf
 

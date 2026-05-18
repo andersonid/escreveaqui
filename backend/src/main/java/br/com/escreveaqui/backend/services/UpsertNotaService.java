@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
-import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -44,11 +44,23 @@ public class UpsertNotaService {
     }
 
     @Transactional
-    public void execute(String slug, String content, Long ttlMinutes, String accessToken, String token) {
+    public void execute(
+            String slug,
+            String content,
+            Long ttlMinutes,
+            boolean configureExpiration,
+            String accessToken,
+            String token
+    ) {
         String safeSlug = makeSlug(slug);
 
-        Nota nota = notaRepository.findBySlug(safeSlug)
-                .orElseGet(() -> Nota.builder().slug(safeSlug).build());
+        Optional<Nota> existing = notaRepository.findBySlug(safeSlug);
+        if (existing.isPresent() && NoteExpiration.isExpired(existing.get())) {
+            notaRepository.delete(existing.get());
+            existing = Optional.empty();
+        }
+
+        Nota nota = existing.orElseGet(() -> Nota.builder().slug(safeSlug).build());
         boolean isNew = nota.getId() == null;
 
         if (!isNew && nota.isProtected() && !isTokenValid(token, nota.getAccessTokenHash())) {
@@ -56,7 +68,11 @@ public class UpsertNotaService {
         }
 
         nota.setContent(content);
-        applyTtl(nota, ttlMinutes);
+        if (configureExpiration) {
+            NoteExpiration.applyPolicy(nota, ttlMinutes);
+        } else {
+            NoteExpiration.renewOnActivity(nota);
+        }
         applyAccessToken(nota, accessToken);
 
         notaRepository.save(nota);
@@ -64,18 +80,6 @@ public class UpsertNotaService {
         if (isNew) createCounter.increment();
         else updateCounter.increment();
         log.debug("{} nota: slug='{}'", isNew ? "Criada" : "Atualizada", safeSlug);
-    }
-
-    private void applyTtl(Nota nota, Long ttlMinutes) {
-        nota.setTtlMinutes(ttlMinutes);
-        if (ttlMinutes != null && ttlMinutes > 0) {
-            nota.setExpiresAt(OffsetDateTime.now().plusMinutes(ttlMinutes));
-        } else {
-            nota.setExpiresAt(null);
-            if (ttlMinutes != null && ttlMinutes <= 0) {
-                nota.setTtlMinutes(null);
-            }
-        }
     }
 
     private void applyAccessToken(Nota nota, String accessToken) {

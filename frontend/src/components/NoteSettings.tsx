@@ -226,7 +226,7 @@ export default function NoteSettings({
 
             {expirationEnabled && previewTtl && (
               <p className="text-xs text-muted-foreground">
-                Equivale a {previewTtl} minuto(s) de inatividade até expirar
+                Após {previewTtl} minuto(s) sem edição, a nota é apagada. Editar renova o prazo.
               </p>
             )}
             {expiresAt && expirationEnabled && (

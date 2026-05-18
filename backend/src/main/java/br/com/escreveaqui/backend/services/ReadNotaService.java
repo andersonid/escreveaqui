@@ -44,6 +44,7 @@ public class ReadNotaService {
         String safeSlug = UpsertNotaService.makeSlug(slug);
 
         return notaRepository.findBySlug(safeSlug)
+                .filter(nota -> !NoteExpiration.isExpired(nota))
                 .map(nota -> {
                     hitCounter.increment();
                     log.debug("Nota encontrada: slug='{}'", safeSlug);

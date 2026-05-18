@@ -52,6 +52,7 @@ export default function Editor() {
           expiresAt: nota.expiresAt,
           isProtected: nota.isProtected,
         })
+        settingsRef.current.ttlMinutes = nota.ttlMinutes
 
         if (nota.isProtected && nota.content === null) {
           setText("")
@@ -106,10 +107,7 @@ export default function Editor() {
       debounce((content: string) => {
         if (!slug || readOnly) return
         notaService
-          .upsert(slug, content, {
-            ttlMinutes: settingsRef.current.ttlMinutes,
-            token: accessToken,
-          })
+          .upsert(slug, content, { token: accessToken })
           .catch((err) => console.error("Falha ao salvar no banco:", err))
       }, AUTO_SAVE_DELAY),
     [slug, readOnly, accessToken]
@@ -154,6 +152,7 @@ export default function Editor() {
         expiresAt: nota.expiresAt,
         isProtected: nota.isProtected,
       })
+      settingsRef.current.ttlMinutes = nota.ttlMinutes
       setNeedsAuth(false)
       setReadOnly(false)
       setText(nota.content ?? "")
@@ -201,6 +200,7 @@ export default function Editor() {
 
     try {
       await notaService.upsert(slug, text, {
+        configureExpiration: true,
         ttlMinutes,
         accessToken: accessTokenPayload,
         token: authToken,

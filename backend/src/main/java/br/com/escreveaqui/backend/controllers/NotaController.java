@@ -40,6 +40,7 @@ public class NotaController {
                 slug,
                 request.content(),
                 request.ttlMinutes(),
+                Boolean.TRUE.equals(request.configureExpiration()),
                 request.accessToken(),
                 token
         );

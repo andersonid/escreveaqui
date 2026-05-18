@@ -27,15 +27,19 @@ export const notaService = {
         content: string,
         options?: {
             ttlMinutes?: number | null;
+            configureExpiration?: boolean;
             accessToken?: string | null;
             token?: string;
         }
     ): Promise<void> {
-        const payload: NotaRequest = {
-            content,
-            ttlMinutes: options?.ttlMinutes,
-            accessToken: options?.accessToken,
-        };
+        const payload: NotaRequest = { content };
+        if (options?.configureExpiration) {
+            payload.configureExpiration = true;
+            payload.ttlMinutes = options.ttlMinutes ?? null;
+        }
+        if (options?.accessToken !== undefined) {
+            payload.accessToken = options.accessToken;
+        }
         await api.put(`/${slug.trim()}`, payload, {
             headers: authHeaders(options?.token),
         });

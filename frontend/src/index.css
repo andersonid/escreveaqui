@@ -46,13 +46,22 @@
   }
 
   html {
+    @apply font-sans;
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-sans;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
     overflow-x: hidden;
     line-height: 1.5;
   }

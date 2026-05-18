@@ -258,7 +258,7 @@ export default function Editor() {
         }
         readOnly={readOnly || needsAuth}
         autoFocus={!needsAuth}
-        className="w-full h-full resize-none border-none rounded-none font-mono text-[18px] leading-6 p-5 pt-14 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+        className="w-full h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 p-5 pt-14 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
         style={{ caretColor: BR_COLORS[caretIndex] }}
       />
 

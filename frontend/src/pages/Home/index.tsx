@@ -27,7 +27,7 @@ export default function Home() {
       .replace(/-+/g, "-")
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 font-sans">
       <div className="w-full max-w-md space-y-6">
         <h1 className="font-display text-4xl font-bold tracking-tight">
           escreve <span className="text-primary">aqui</span>
@@ -43,7 +43,7 @@ export default function Home() {
             placeholder="minha-nota"
             className="rounded-none border-x-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-ring"
           />
-          <Button type="submit" className="rounded-l-none font-mono">
+          <Button type="submit" className="rounded-l-none">
             criar
           </Button>
         </form>

@@ -20,8 +20,8 @@ public interface NotaRepository extends JpaRepository<Nota, UUID> {
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM Nota n WHERE n.updatedAt < :dateTime")
-    int deleteOldNotes(@Param("dateTime") OffsetDateTime dateTime);
+    @Query("DELETE FROM Nota n WHERE n.expiresAt IS NOT NULL AND n.expiresAt < :now")
+    int deleteExpiredNotes(@Param("now") OffsetDateTime now);
 
     boolean existsBySlug(String slug);
 }

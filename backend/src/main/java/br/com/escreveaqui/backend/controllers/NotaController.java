@@ -23,18 +23,26 @@ public class NotaController {
     private static final String SLUG_REGEX = "^[A-Za-z0-9_\\s-]+$";
 
     @GetMapping(value = "/{slug}", produces = "application/json")
-    public ResponseEntity<NotaResponseDTO> read(@PathVariable @Pattern(regexp = SLUG_REGEX) String slug) {
-        return ResponseEntity.ok(readService.execute(slug));
+    public ResponseEntity<NotaResponseDTO> read(
+            @PathVariable @Pattern(regexp = SLUG_REGEX) String slug,
+            @RequestHeader(value = "X-Note-Token", required = false) String token
+    ) {
+        return ResponseEntity.ok(readService.execute(slug, token));
     }
 
     @PutMapping(value = "/{slug}", consumes = "application/json")
     public ResponseEntity<Void> upsert(
-            @PathVariable
-            @Pattern(regexp = SLUG_REGEX) String slug,
-            @RequestBody
-            @Valid NotaRequestDTO request
+            @PathVariable @Pattern(regexp = SLUG_REGEX) String slug,
+            @RequestBody @Valid NotaRequestDTO request,
+            @RequestHeader(value = "X-Note-Token", required = false) String token
     ) {
-        upsertService.execute(slug, request.content());
+        upsertService.execute(
+                slug,
+                request.content(),
+                request.ttlMinutes(),
+                request.accessToken(),
+                token
+        );
         return ResponseEntity.noContent().build();
     }
 }

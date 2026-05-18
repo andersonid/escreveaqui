@@ -1,7 +1,12 @@
 import { useParams } from "react-router-dom"
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { Lock } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { notaService } from "@/services/notaService"
+import { clearStoredToken, getStoredToken, setStoredToken } from "@/lib/noteToken"
+import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
+import AccessDialog from "@/components/AccessDialog"
+import type { Nota } from "@/interface/nota"
 import debounce from "lodash.debounce"
 import type { DebouncedFunc } from "lodash"
 
@@ -11,10 +16,26 @@ const AUTO_SAVE_DELAY = 1000
 
 export default function Editor() {
   const { key } = useParams<{ key: string }>()
+  const slug = key?.trim() ?? ""
+
   const [text, setText] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [caretIndex, setCaretIndex] = useState(0)
+  const [noteMeta, setNoteMeta] = useState<Pick<Nota, "ttlMinutes" | "expiresAt" | "isProtected">>({
+    ttlMinutes: null,
+    expiresAt: null,
+    isProtected: false,
+  })
+  const [accessToken, setAccessToken] = useState<string | undefined>(() =>
+    slug ? getStoredToken(slug) ?? undefined : undefined
+  )
+  const [needsAuth, setNeedsAuth] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [readOnly, setReadOnly] = useState(false)
+
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -23,32 +44,74 @@ export default function Editor() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    if (!key) return
-    const fetchUpdates = async () => {
-      if (!isTyping) {
-        try {
-          const nota = await notaService.getBySlug(key)
-          if (nota?.content !== undefined && nota.content !== text) {
-            setText(nota.content)
-          }
-        } catch (err) {
-          console.error("Erro no polling de atualização:", err)
+  const loadNote = useCallback(
+    async (token?: string) => {
+      if (!slug) return
+      try {
+        const nota = await notaService.getBySlug(slug, token)
+        setNoteMeta({
+          ttlMinutes: nota.ttlMinutes,
+          expiresAt: nota.expiresAt,
+          isProtected: nota.isProtected,
+        })
+
+        if (nota.isProtected && nota.content === null) {
+          setNeedsAuth(true)
+          setReadOnly(true)
+          setLoaded(true)
+          return
+        }
+
+        setNeedsAuth(false)
+        setAuthError(null)
+        setReadOnly(false)
+        if (nota.content !== null && nota.content !== undefined) {
+          setText(nota.content)
+        }
+        setLoaded(true)
+      } catch (err) {
+        if (notaService.isForbidden(err)) {
+          setAuthError("Senha incorreta")
+          setNeedsAuth(true)
+          setReadOnly(true)
+          if (slug) clearStoredToken(slug)
+        } else {
+          console.error("Erro ao carregar nota:", err)
         }
       }
-    }
-    const interval = setInterval(fetchUpdates, 2000)
-    return () => clearInterval(interval)
-  }, [key, isTyping, text])
+    },
+    [slug]
+  )
 
-  const saveToBackend: DebouncedFunc<(slug: string, content: string) => void> = useMemo(
+  useEffect(() => {
+    if (!slug) return
+    const stored = getStoredToken(slug)
+    setAccessToken(stored ?? undefined)
+    setLoaded(false)
+    void loadNote(stored ?? undefined)
+  }, [slug, loadNote])
+
+  useEffect(() => {
+    if (!slug || !loaded || needsAuth || isTyping) return
+
+    const interval = setInterval(() => {
+      void loadNote(accessToken)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [slug, loaded, needsAuth, isTyping, accessToken, loadNote])
+
+  const saveToBackend: DebouncedFunc<(content: string) => void> = useMemo(
     () =>
-      debounce((slug: string, content: string) => {
+      debounce((content: string) => {
+        if (!slug || readOnly) return
         notaService
-          .upsert(slug, content)
+          .upsert(slug, content, {
+            ttlMinutes: settingsRef.current.ttlMinutes,
+            token: accessToken,
+          })
           .catch((err) => console.error("Falha ao salvar no banco:", err))
       }, AUTO_SAVE_DELAY),
-    []
+    [slug, readOnly, accessToken]
   )
 
   useEffect(() => {
@@ -58,6 +121,7 @@ export default function Editor() {
   }, [saveToBackend])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (readOnly) return
     const newText = e.target.value
     setText(newText)
     setIsTyping(true)
@@ -67,23 +131,93 @@ export default function Editor() {
       setIsTyping(false)
     }, INACTIVITY_TIMEOUT)
 
-    if (key) saveToBackend(key, newText)
+    saveToBackend(newText)
+  }
+
+  const handleAuthSubmit = async (token: string) => {
+    if (!slug) return
+    setStoredToken(slug, token)
+    setAccessToken(token)
+    setAuthError(null)
+    await loadNote(token)
+  }
+
+  const handleSettingsApply = async (settings: NoteSettingsState) => {
+    if (!slug) return
+
+    const ttlMinutes = ttlMinutesFromParts(
+      settings.expirationEnabled,
+      settings.ttlValue,
+      settings.ttlUnit
+    )
+    settingsRef.current.ttlMinutes = ttlMinutes
+
+    let accessTokenPayload: string | null | undefined = undefined
+    if (!settings.protectionEnabled) {
+      accessTokenPayload = ""
+    } else if (settings.accessPassword.trim()) {
+      accessTokenPayload = settings.accessPassword.trim()
+    }
+
+    await notaService.upsert(slug, text, {
+      ttlMinutes,
+      accessToken: accessTokenPayload,
+      token: accessToken,
+    })
+
+    if (accessTokenPayload && accessTokenPayload.length > 0) {
+      setStoredToken(slug, accessTokenPayload)
+      setAccessToken(accessTokenPayload)
+    }
+
+    await loadNote(accessToken ?? accessTokenPayload ?? undefined)
   }
 
   useEffect(() => {
-    const titleText = (key ?? "").trim().substring(0, 10)
+    const titleText = slug.substring(0, 10)
     document.title = titleText ? `${titleText} | escreveaqui` : "escreveaqui"
-  }, [key])
+  }, [slug])
+
+  if (!slug) {
+    return null
+  }
 
   return (
-    <div className="w-full h-screen bg-background">
+    <div className="w-full h-screen bg-background relative">
+      <NoteSettings
+        slug={slug}
+        initialTtlMinutes={noteMeta.ttlMinutes}
+        initialProtected={noteMeta.isProtected}
+        expiresAt={noteMeta.expiresAt}
+        onApply={handleSettingsApply}
+      />
+
+      {noteMeta.isProtected && !needsAuth && (
+        <div className="fixed top-3 left-3 z-20 flex items-center gap-1 rounded-md border bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
+          <Lock className="h-3 w-3" />
+          Protegida
+        </div>
+      )}
+
       <Textarea
         value={text}
         onChange={handleChange}
-        placeholder={`Escrevendo em: ${key}`}
-        autoFocus
-        className="w-full h-full resize-none border-none rounded-none font-mono text-[18px] leading-6 p-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+        placeholder={
+          needsAuth
+            ? "Informe a senha para editar esta nota"
+            : `Escrevendo em: ${slug}`
+        }
+        readOnly={readOnly}
+        autoFocus={!needsAuth}
+        className="w-full h-full resize-none border-none rounded-none font-mono text-[18px] leading-6 p-5 pt-14 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
         style={{ caretColor: BR_COLORS[caretIndex] }}
+      />
+
+      <AccessDialog
+        slug={slug}
+        open={needsAuth}
+        error={authError}
+        onSubmit={(token) => void handleAuthSubmit(token)}
       />
     </div>
   )

@@ -29,10 +29,10 @@ public class DeleteNotaService {
     @Transactional
     @CacheEvict(value = "notas", allEntries = true)
     public void execute() {
-        OffsetDateTime limitDate = OffsetDateTime.now().minusDays(30);
-        log.info("Iniciando limpeza de notas inativas antes de {}", limitDate);
+        OffsetDateTime now = OffsetDateTime.now();
+        log.info("Iniciando limpeza de notas expiradas antes de {}", now);
 
-        int deleted = notaRepository.deleteOldNotes(limitDate);
+        int deleted = notaRepository.deleteExpiredNotes(now);
         deletedCounter.increment(deleted);
 
         log.info("Limpeza concluída: {} nota(s) removida(s)", deleted);

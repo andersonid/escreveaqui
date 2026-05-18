@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: escreveaqui-backend
+  namespace: escreveaqui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: escreveaqui-backend
+  template:
+    metadata:
+      labels:
+        app: escreveaqui-backend
+    spec:
+      containers:
+        - name: backend
+          image: escreveaqui-backend:placeholder
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: escreveaqui-db
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_DB
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_PASSWORD
+            - name: ALLOWED_ORIGINS
+              value: https://escreveaqui.nobre.ninja
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi

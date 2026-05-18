@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: escreveaqui-frontend
+  namespace: escreveaqui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: escreveaqui-frontend
+  template:
+    metadata:
+      labels:
+        app: escreveaqui-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: escreveaqui-frontend:placeholder
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi

@@ -5,5 +5,8 @@ import java.time.OffsetDateTime;
 public record NotaResponseDTO(
         String slug,
         String content,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        Long ttlMinutes,
+        OffsetDateTime expiresAt,
+        boolean isProtected
 ) {}

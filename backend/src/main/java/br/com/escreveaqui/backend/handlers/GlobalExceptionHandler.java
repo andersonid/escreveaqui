@@ -1,5 +1,6 @@
 package br.com.escreveaqui.backend.handlers;
 
+import br.com.escreveaqui.backend.exceptions.NoteAccessDeniedException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +17,16 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(NoteAccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(NoteAccessDeniedException ex) {
+        log.warn("Acesso negado à nota: {}", ex.getMessage());
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setTitle("Acesso negado");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail handleConstraintViolation(ConstraintViolationException ex) {

@@ -38,6 +38,19 @@ public class Nota {
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(nullable = true)
+    private Long ttlMinutes;
+
+    @Column(nullable = true)
+    private OffsetDateTime expiresAt;
+
+    @Column(nullable = true, length = 72)
+    private String accessTokenHash;
+
     @Version
     private Long version;
+
+    public boolean isProtected() {
+        return accessTokenHash != null && !accessTokenHash.isBlank();
+    }
 }

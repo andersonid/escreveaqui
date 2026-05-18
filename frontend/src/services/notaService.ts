@@ -44,4 +44,20 @@ export const notaService = {
     isForbidden(error: unknown): boolean {
         return isAxiosError(error) && error.response?.status === 403;
     },
+
+    getErrorMessage(error: unknown): string {
+        if (isAxiosError(error)) {
+            const detail = error.response?.data?.detail;
+            if (typeof detail === 'string' && detail.length > 0) {
+                return detail;
+            }
+            if (error.response?.status === 403) {
+                return 'Senha incorreta ou ausente para alterar esta nota.';
+            }
+            if (error.response?.status === 400) {
+                return 'Dados inválidos. Verifique os campos e tente novamente.';
+            }
+        }
+        return 'Não foi possível salvar as configurações. Tente novamente.';
+    },
 };

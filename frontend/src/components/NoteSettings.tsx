@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Settings, Lock } from "lucide-react"
+import { Settings, Lock, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -62,6 +62,29 @@ export function formatExpiresAt(expiresAt: string | null): string | null {
   }
 }
 
+function validateSettings(
+  settings: NoteSettingsState,
+  initialProtected: boolean
+): string | null {
+  if (settings.expirationEnabled && settings.ttlValue < 1) {
+    return "Informe um tempo de expiração válido (mínimo 1)."
+  }
+
+  const password = settings.accessPassword.trim()
+  const needsNewPassword = settings.protectionEnabled && !initialProtected
+  const changingPassword = settings.protectionEnabled && initialProtected && password.length > 0
+
+  if (needsNewPassword && password.length < 4) {
+    return "Para proteger a nota, defina uma senha com pelo menos 4 caracteres."
+  }
+
+  if (changingPassword && password.length < 4) {
+    return "A nova senha deve ter pelo menos 4 caracteres."
+  }
+
+  return null
+}
+
 export default function NoteSettings({
   slug,
   initialTtlMinutes,
@@ -71,6 +94,8 @@ export default function NoteSettings({
 }: NoteSettingsProps) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const initialParts = partsFromTtlMinutes(initialTtlMinutes)
   const [expirationEnabled, setExpirationEnabled] = useState(initialParts.expirationEnabled)
   const [ttlValue, setTtlValue] = useState(initialParts.ttlValue)
@@ -78,26 +103,60 @@ export default function NoteSettings({
   const [protectionEnabled, setProtectionEnabled] = useState(initialProtected)
   const [accessPassword, setAccessPassword] = useState("")
 
-  useEffect(() => {
+  const resetForm = () => {
     const parts = partsFromTtlMinutes(initialTtlMinutes)
     setExpirationEnabled(parts.expirationEnabled)
     setTtlValue(parts.ttlValue)
     setTtlUnit(parts.ttlUnit)
     setProtectionEnabled(initialProtected)
+    setAccessPassword("")
+    setError(null)
+    setSuccess(false)
+  }
+
+  useEffect(() => {
+    if (open) {
+      resetForm()
+    }
   }, [initialTtlMinutes, initialProtected, open])
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
   const handleApply = async () => {
+    const settings: NoteSettingsState = {
+      expirationEnabled,
+      ttlValue,
+      ttlUnit,
+      protectionEnabled,
+      accessPassword,
+    }
+
+    const validationError = validateSettings(settings, initialProtected)
+    if (validationError) {
+      setError(validationError)
+      setSuccess(false)
+      return
+    }
+
     setSaving(true)
+    setError(null)
+    setSuccess(false)
+
     try {
-      await onApply({
-        expirationEnabled,
-        ttlValue,
-        ttlUnit,
-        protectionEnabled,
-        accessPassword,
-      })
-      setOpen(false)
+      await onApply(settings)
+      setSuccess(true)
       setAccessPassword("")
+      window.setTimeout(() => {
+        setOpen(false)
+        setSuccess(false)
+      }, 600)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível salvar as configurações.")
     } finally {
       setSaving(false)
     }
@@ -106,7 +165,7 @@ export default function NoteSettings({
   const previewTtl = ttlMinutesFromParts(expirationEnabled, ttlValue, ttlUnit)
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -135,7 +194,11 @@ export default function NoteSettings({
                   Renova a partir de cada edição
                 </p>
               </div>
-              <Switch checked={expirationEnabled} onCheckedChange={setExpirationEnabled} />
+              <Switch
+                checked={expirationEnabled}
+                onCheckedChange={setExpirationEnabled}
+                disabled={saving}
+              />
             </div>
 
             {expirationEnabled && (
@@ -146,11 +209,13 @@ export default function NoteSettings({
                   value={ttlValue}
                   onChange={(e) => setTtlValue(Number(e.target.value))}
                   className="w-24"
+                  disabled={saving}
                 />
                 <select
                   value={ttlUnit}
                   onChange={(e) => setTtlUnit(e.target.value as TtlUnit)}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+                  disabled={saving}
                 >
                   <option value="minutes">minutos</option>
                   <option value="hours">horas</option>
@@ -179,7 +244,11 @@ export default function NoteSettings({
                   Compartilhe a senha com quem deve acessar
                 </p>
               </div>
-              <Switch checked={protectionEnabled} onCheckedChange={setProtectionEnabled} />
+              <Switch
+                checked={protectionEnabled}
+                onCheckedChange={setProtectionEnabled}
+                disabled={saving}
+              />
             </div>
 
             {protectionEnabled && (
@@ -188,7 +257,8 @@ export default function NoteSettings({
                 value={accessPassword}
                 onChange={(e) => setAccessPassword(e.target.value)}
                 placeholder={initialProtected ? "Nova senha (deixe vazio para manter)" : "Definir senha de acesso"}
-                minLength={4}
+                disabled={saving}
+                autoComplete="new-password"
               />
             )}
             {protectionEnabled && (
@@ -197,14 +267,26 @@ export default function NoteSettings({
               </p>
             )}
           </section>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="text-sm text-primary flex items-center gap-2" role="status">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Configurações salvas
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={handleApply} disabled={saving}>
-            {saving ? "Salvando…" : "Aplicar"}
+          <Button onClick={() => void handleApply()} disabled={saving || success}>
+            {saving ? "Salvando…" : success ? "Salvo" : "Aplicar"}
           </Button>
         </div>
       </DialogContent>

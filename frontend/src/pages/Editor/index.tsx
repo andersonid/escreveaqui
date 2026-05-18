@@ -159,18 +159,38 @@ export default function Editor() {
       accessTokenPayload = settings.accessPassword.trim()
     }
 
-    await notaService.upsert(slug, text, {
-      ttlMinutes,
-      accessToken: accessTokenPayload,
-      token: accessToken,
-    })
+    const authToken =
+      accessTokenPayload && accessTokenPayload.length > 0
+        ? accessTokenPayload
+        : accessToken
+
+    if (noteMeta.isProtected && !authToken) {
+      throw new Error("Esta nota está protegida. Informe a senha atual para alterar as configurações.")
+    }
+
+    try {
+      await notaService.upsert(slug, text, {
+        ttlMinutes,
+        accessToken: accessTokenPayload,
+        token: authToken,
+      })
+    } catch (err) {
+      throw new Error(notaService.getErrorMessage(err))
+    }
 
     if (accessTokenPayload && accessTokenPayload.length > 0) {
       setStoredToken(slug, accessTokenPayload)
       setAccessToken(accessTokenPayload)
+    } else if (accessTokenPayload === "") {
+      clearStoredToken(slug)
+      setAccessToken(undefined)
     }
 
-    await loadNote(accessToken ?? accessTokenPayload ?? undefined)
+    await loadNote(
+      accessTokenPayload && accessTokenPayload.length > 0
+        ? accessTokenPayload
+        : accessToken
+    )
   }
 
   useEffect(() => {

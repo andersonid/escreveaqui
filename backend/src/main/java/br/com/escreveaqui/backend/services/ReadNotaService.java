@@ -40,7 +40,9 @@ public class ReadNotaService {
                 .register(registry);
     }
 
-    @Cacheable(value = "notas", key = "#slug + ':' + (#token != null ? 'auth' : 'public')")
+    // Só cacheia leituras sem token (metadados de nota protegida ou conteúdo público).
+    // Leituras autenticadas não entram no cache: senha errada não pode reutilizar entrada de outra sessão.
+    @Cacheable(value = "notas", key = "#slug + ':public'", condition = "#token == null")
     @Transactional(readOnly = true)
     public NotaResponseDTO execute(String slug, String token) {
         String safeSlug = UpsertNotaService.makeSlug(slug);

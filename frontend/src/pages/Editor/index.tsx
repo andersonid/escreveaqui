@@ -33,6 +33,7 @@ export default function Editor() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [readOnly, setReadOnly] = useState(false)
+  const [authLoading, setAuthLoading] = useState(false)
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
@@ -56,6 +57,7 @@ export default function Editor() {
         })
 
         if (nota.isProtected && nota.content === null) {
+          setText("")
           setNeedsAuth(true)
           setReadOnly(true)
           setLoaded(true)
@@ -71,10 +73,13 @@ export default function Editor() {
         setLoaded(true)
       } catch (err) {
         if (notaService.isForbidden(err)) {
+          setText("")
           setAuthError("Senha incorreta")
           setNeedsAuth(true)
           setReadOnly(true)
+          setAccessToken(undefined)
           if (slug) clearStoredToken(slug)
+          setLoaded(true)
         } else {
           console.error("Erro ao carregar nota:", err)
         }
@@ -136,10 +141,42 @@ export default function Editor() {
 
   const handleAuthSubmit = async (token: string) => {
     if (!slug) return
-    setStoredToken(slug, token)
-    setAccessToken(token)
+    setAuthLoading(true)
     setAuthError(null)
-    await loadNote(token)
+    setText("")
+    try {
+      const nota = await notaService.getBySlug(slug, token)
+      if (nota.isProtected && nota.content === null) {
+        setAuthError("Senha incorreta")
+        setNeedsAuth(true)
+        setReadOnly(true)
+        return
+      }
+      setStoredToken(slug, token)
+      setAccessToken(token)
+      setNoteMeta({
+        ttlMinutes: nota.ttlMinutes,
+        expiresAt: nota.expiresAt,
+        isProtected: nota.isProtected,
+      })
+      setNeedsAuth(false)
+      setReadOnly(false)
+      setText(nota.content ?? "")
+      setLoaded(true)
+    } catch (err) {
+      setText("")
+      setAccessToken(undefined)
+      clearStoredToken(slug)
+      if (notaService.isForbidden(err)) {
+        setAuthError("Senha incorreta")
+      } else {
+        setAuthError(notaService.getErrorMessage(err))
+      }
+      setNeedsAuth(true)
+      setReadOnly(true)
+    } finally {
+      setAuthLoading(false)
+    }
   }
 
   const handleSettingsApply = async (settings: NoteSettingsState) => {
@@ -220,14 +257,14 @@ export default function Editor() {
       )}
 
       <Textarea
-        value={text}
+        value={needsAuth ? "" : text}
         onChange={handleChange}
         placeholder={
           needsAuth
             ? "Informe a senha para editar esta nota"
             : `Escrevendo em: ${slug}`
         }
-        readOnly={readOnly}
+        readOnly={readOnly || needsAuth}
         autoFocus={!needsAuth}
         className="w-full h-full resize-none border-none rounded-none font-mono text-[18px] leading-6 p-5 pt-14 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
         style={{ caretColor: BR_COLORS[caretIndex] }}
@@ -237,7 +274,8 @@ export default function Editor() {
         slug={slug}
         open={needsAuth}
         error={authError}
-        onSubmit={(token) => void handleAuthSubmit(token)}
+        loading={authLoading}
+        onSubmit={handleAuthSubmit}
       />
     </div>
   )

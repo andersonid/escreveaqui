@@ -14,16 +14,17 @@ interface AccessDialogProps {
   slug: string
   open: boolean
   error?: string | null
-  onSubmit: (token: string) => void
+  loading?: boolean
+  onSubmit: (token: string) => void | Promise<void>
 }
 
-export default function AccessDialog({ slug, open, error, onSubmit }: AccessDialogProps) {
+export default function AccessDialog({ slug, open, error, loading, onSubmit }: AccessDialogProps) {
   const [token, setToken] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!token.trim()) return
-    onSubmit(token.trim())
+    if (!token.trim() || loading) return
+    await onSubmit(token.trim())
   }
 
   return (
@@ -47,7 +48,9 @@ export default function AccessDialog({ slug, open, error, onSubmit }: AccessDial
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button type="submit">Entrar</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Verificando…" : "Entrar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

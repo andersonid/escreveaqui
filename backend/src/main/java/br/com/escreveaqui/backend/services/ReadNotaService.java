@@ -7,7 +7,6 @@ import br.com.escreveaqui.backend.repositories.NotaRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +39,6 @@ public class ReadNotaService {
                 .register(registry);
     }
 
-    // Só cacheia leituras sem token (metadados de nota protegida ou conteúdo público).
-    // Leituras autenticadas não entram no cache: senha errada não pode reutilizar entrada de outra sessão.
-    @Cacheable(value = "notas", key = "#slug + ':public'", condition = "#token == null")
     @Transactional(readOnly = true)
     public NotaResponseDTO execute(String slug, String token) {
         String safeSlug = UpsertNotaService.makeSlug(slug);

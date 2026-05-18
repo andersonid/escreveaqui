@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { notaService } from "@/services/notaService"
-import { clearStoredToken, getStoredToken, setStoredToken } from "@/lib/noteToken"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import AccessDialog from "@/components/AccessDialog"
 import type { Nota } from "@/interface/nota"
@@ -26,9 +25,7 @@ export default function Editor() {
     expiresAt: null,
     isProtected: false,
   })
-  const [accessToken, setAccessToken] = useState<string | undefined>(() =>
-    slug ? getStoredToken(slug) ?? undefined : undefined
-  )
+  const [accessToken, setAccessToken] = useState<string | undefined>()
   const [needsAuth, setNeedsAuth] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -78,7 +75,6 @@ export default function Editor() {
           setNeedsAuth(true)
           setReadOnly(true)
           setAccessToken(undefined)
-          if (slug) clearStoredToken(slug)
           setLoaded(true)
         } else {
           console.error("Erro ao carregar nota:", err)
@@ -90,10 +86,10 @@ export default function Editor() {
 
   useEffect(() => {
     if (!slug) return
-    const stored = getStoredToken(slug)
-    setAccessToken(stored ?? undefined)
+    sessionStorage.removeItem(`escreveaqui:token:${slug}`)
+    setAccessToken(undefined)
     setLoaded(false)
-    void loadNote(stored ?? undefined)
+    void loadNote()
   }, [slug, loadNote])
 
   useEffect(() => {
@@ -152,7 +148,6 @@ export default function Editor() {
         setReadOnly(true)
         return
       }
-      setStoredToken(slug, token)
       setAccessToken(token)
       setNoteMeta({
         ttlMinutes: nota.ttlMinutes,
@@ -166,7 +161,6 @@ export default function Editor() {
     } catch (err) {
       setText("")
       setAccessToken(undefined)
-      clearStoredToken(slug)
       if (notaService.isForbidden(err)) {
         setAuthError("Senha incorreta")
       } else {
@@ -216,10 +210,8 @@ export default function Editor() {
     }
 
     if (accessTokenPayload && accessTokenPayload.length > 0) {
-      setStoredToken(slug, accessTokenPayload)
       setAccessToken(accessTokenPayload)
     } else if (accessTokenPayload === "") {
-      clearStoredToken(slug)
       setAccessToken(undefined)
     }
 

@@ -34,7 +34,9 @@ export default function AccessDialog({ slug, open, error, loading, onSubmit }: A
           <DialogHeader>
             <DialogTitle>Nota protegida</DialogTitle>
             <DialogDescription>
-              A nota <span className="font-mono">{slug}</span> exige senha de acesso.
+              A nota <span className="font-mono">{slug}</span> exige senha de acesso. A senha não
+              fica guardada neste navegador — ao atualizar a página será necessário informá-la de
+              novo. Sem a senha correta o conteúdo não pode ser recuperado.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">

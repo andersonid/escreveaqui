@@ -263,7 +263,9 @@ export default function NoteSettings({
             )}
             {protectionEnabled && (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                Guarde a senha: sem ela ninguém lê ou edita esta nota.
+                Guarde a senha com segurança: não há recuperação. Sem ela o conteúdo fica
+                inacessível (permanece no servidor, mas ilegível). Ao atualizar a página será
+                preciso digitá-la de novo.
               </p>
             )}
           </section>

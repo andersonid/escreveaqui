@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
-        <h1 className="font-mono text-4xl font-bold tracking-tight">
+        <h1 className="font-display text-4xl font-bold tracking-tight">
           escreve <span className="text-primary">aqui</span>
         </h1>
 

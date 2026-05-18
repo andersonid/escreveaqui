@@ -4,6 +4,11 @@ module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Red Hat Text"', "system-ui", "sans-serif"],
+        display: ['"Red Hat Display"', '"Red Hat Text"', "system-ui", "sans-serif"],
+        mono: ['"Red Hat Mono"', "ui-monospace", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

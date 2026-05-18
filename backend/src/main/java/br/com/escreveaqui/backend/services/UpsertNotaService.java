@@ -6,7 +6,6 @@ import br.com.escreveaqui.backend.repositories.NotaRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +43,6 @@ public class UpsertNotaService {
                 .register(registry);
     }
 
-    @CacheEvict(value = "notas", allEntries = true)
     @Transactional
     public void execute(String slug, String content, Long ttlMinutes, String accessToken, String token) {
         String safeSlug = makeSlug(slug);

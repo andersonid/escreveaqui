@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Settings, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import PasswordInput from "@/components/PasswordInput"
 import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
@@ -63,9 +64,21 @@ export function formatExpiresAt(expiresAt: string | null): string | null {
   }
 }
 
-function validateSettings(
+function requiresPasswordConfirmation(
   settings: NoteSettingsState,
   initialProtected: boolean
+): boolean {
+  const password = settings.accessPassword.trim()
+  return (
+    settings.protectionEnabled &&
+    (!initialProtected || password.length > 0)
+  )
+}
+
+function validateSettings(
+  settings: NoteSettingsState,
+  initialProtected: boolean,
+  confirmPassword: string
 ): string | null {
   if (settings.expirationEnabled && settings.ttlValue < 1) {
     return "Informe um tempo de expiração válido (mínimo 1)."
@@ -81,6 +94,16 @@ function validateSettings(
 
   if (changingPassword && password.length < 4) {
     return "A nova senha deve ter pelo menos 4 caracteres."
+  }
+
+  if (requiresPasswordConfirmation(settings, initialProtected)) {
+    const confirm = confirmPassword.trim()
+    if (!confirm) {
+      return "Confirme a senha."
+    }
+    if (password !== confirm) {
+      return "As senhas não coincidem."
+    }
   }
 
   return null
@@ -104,6 +127,7 @@ export default function NoteSettings({
   const [ttlUnit, setTtlUnit] = useState<TtlUnit>(initialParts.ttlUnit)
   const [protectionEnabled, setProtectionEnabled] = useState(initialProtected)
   const [accessPassword, setAccessPassword] = useState("")
+  const [accessPasswordConfirm, setAccessPasswordConfirm] = useState("")
 
   const resetForm = () => {
     const parts = partsFromTtlMinutes(initialTtlMinutes)
@@ -112,6 +136,7 @@ export default function NoteSettings({
     setTtlUnit(parts.ttlUnit)
     setProtectionEnabled(initialProtected)
     setAccessPassword("")
+    setAccessPasswordConfirm("")
     setError(null)
     setSuccess(false)
   }
@@ -138,7 +163,7 @@ export default function NoteSettings({
       accessPassword,
     }
 
-    const validationError = validateSettings(settings, initialProtected)
+    const validationError = validateSettings(settings, initialProtected, accessPasswordConfirm)
     if (validationError) {
       setError(validationError)
       setSuccess(false)
@@ -153,6 +178,7 @@ export default function NoteSettings({
       await onApply(settings)
       setSuccess(true)
       setAccessPassword("")
+      setAccessPasswordConfirm("")
       window.setTimeout(() => {
         setOpen(false)
         setSuccess(false)
@@ -254,17 +280,40 @@ export default function NoteSettings({
             </div>
 
             {protectionEnabled && (
-              <Input
-                type="password"
-                value={accessPassword}
-                onChange={(e) => setAccessPassword(e.target.value)}
-                placeholder={initialProtected ? "Nova senha (deixe vazio para manter)" : "Definir senha de acesso"}
-                disabled={saving}
-                autoComplete="new-password"
-              />
+              <div className="space-y-2">
+                <PasswordInput
+                  id="note-access-password"
+                  value={accessPassword}
+                  onChange={setAccessPassword}
+                  placeholder={
+                    initialProtected ? "Nova senha (deixe vazio para manter)" : "Definir senha de acesso"
+                  }
+                  disabled={saving}
+                  autoComplete="new-password"
+                />
+                {requiresPasswordConfirmation(
+                  {
+                    expirationEnabled,
+                    ttlValue,
+                    ttlUnit,
+                    protectionEnabled,
+                    accessPassword,
+                  },
+                  initialProtected
+                ) && (
+                  <PasswordInput
+                    id="note-access-password-confirm"
+                    value={accessPasswordConfirm}
+                    onChange={setAccessPasswordConfirm}
+                    placeholder="Confirmar senha"
+                    disabled={saving}
+                    autoComplete="new-password"
+                  />
+                )}
+              </div>
             )}
             {protectionEnabled && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
+              <p className="text-xs text-neutral-700 dark:text-neutral-400">
                 Guarde a senha com segurança: não há recuperação. Sem ela o conteúdo fica
                 inacessível (permanece no servidor, mas ilegível). Ao atualizar a página será
                 preciso digitá-la de novo.

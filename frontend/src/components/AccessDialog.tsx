@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import PasswordInput from "@/components/PasswordInput"
 
 interface AccessDialogProps {
   slug: string
@@ -40,11 +40,13 @@ export default function AccessDialog({ slug, open, error, loading, onSubmit }: A
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
-            <Input
-              type="password"
+            <PasswordInput
+              id="note-unlock-password"
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={setToken}
               placeholder="Senha de acesso"
+              disabled={loading}
+              autoComplete="current-password"
               autoFocus
             />
             {error && <p className="text-sm text-destructive">{error}</p>}

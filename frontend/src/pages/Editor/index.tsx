@@ -324,7 +324,7 @@ export default function Editor() {
             }
             readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
             autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
-            className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+            className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-base leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
             style={{ caretColor: CARET_COLORS[caretIndex] }}
           />
         </div>

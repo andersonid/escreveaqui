@@ -268,7 +268,7 @@ export default function Editor() {
           {!needsAuth && (
             <div
               ref={gutterRef}
-              className="shrink-0 overflow-hidden border-r border-border/25 bg-muted/15 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/55 select-none [scrollbar-width:none]"
+              className="shrink-0 overflow-hidden border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none [scrollbar-width:none]"
             >
               <EditorLineGutter text={text} />
             </div>

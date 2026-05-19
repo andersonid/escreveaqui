@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom"
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import EditorLineGutter from "@/components/EditorLineGutter"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import AccessDialog from "@/components/AccessDialog"
@@ -34,6 +35,16 @@ export default function Editor() {
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const gutterRef = useRef<HTMLDivElement>(null)
+
+  const syncGutterScroll = useCallback(() => {
+    const ta = textareaRef.current
+    const gutter = gutterRef.current
+    if (ta && gutter) {
+      gutter.scrollTop = ta.scrollTop
+    }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -242,25 +253,43 @@ export default function Editor() {
       />
 
       {noteMeta.isProtected && !needsAuth && (
-        <div className="fixed top-3 left-3 z-20 flex items-center gap-1 rounded-md border bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
-          <Lock className="h-3 w-3" />
+        <div
+          className="fixed top-3 right-3 z-20 flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 shadow-sm backdrop-blur dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+          role="status"
+          aria-label="Nota protegida por senha"
+        >
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Protegida
         </div>
       )}
 
-      <Textarea
-        value={needsAuth ? "" : text}
-        onChange={handleChange}
-        placeholder={
-          needsAuth
-            ? "Informe a senha para editar esta nota"
-            : `Escrevendo em: ${slug}`
-        }
-        readOnly={readOnly || needsAuth}
-        autoFocus={!needsAuth}
-        className="w-full h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 p-5 pt-14 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
-        style={{ caretColor: BR_COLORS[caretIndex] }}
-      />
+      <div className="absolute inset-0 flex flex-col pt-14">
+        <div className="flex min-h-0 flex-1">
+          {!needsAuth && (
+            <div
+              ref={gutterRef}
+              className="shrink-0 overflow-hidden border-r border-border/25 bg-muted/15 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/55 select-none [scrollbar-width:none]"
+            >
+              <EditorLineGutter text={text} />
+            </div>
+          )}
+          <Textarea
+            ref={textareaRef}
+            value={needsAuth ? "" : text}
+            onChange={handleChange}
+            onScroll={syncGutterScroll}
+            placeholder={
+              needsAuth
+                ? "Informe a senha para editar esta nota"
+                : `Escrevendo em: ${slug}`
+            }
+            readOnly={readOnly || needsAuth}
+            autoFocus={!needsAuth}
+            className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+            style={{ caretColor: BR_COLORS[caretIndex] }}
+          />
+        </div>
+      </div>
 
       <AccessDialog
         slug={slug}

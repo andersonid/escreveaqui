@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Settings, Lock, CheckCircle2 } from "lucide-react"
+import { Settings, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -170,11 +170,10 @@ export default function NoteSettings({
         <Button
           variant="ghost"
           size="icon"
-          className="fixed top-3 right-3 z-20 bg-background/80 backdrop-blur border shadow-sm relative"
+          className="fixed top-3 left-3 z-20 bg-background/80 backdrop-blur border shadow-sm"
           title="Configurações da nota"
         >
           <Settings className="h-4 w-4" />
-          {initialProtected && <Lock className="h-3 w-3 absolute -bottom-0.5 -right-0.5 text-primary" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">

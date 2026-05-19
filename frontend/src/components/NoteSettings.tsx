@@ -27,6 +27,7 @@ interface NoteSettingsProps {
   initialTtlMinutes: number | null
   initialProtected: boolean
   expiresAt: string | null
+  disabled?: boolean
   onApply: (settings: NoteSettingsState) => Promise<void>
 }
 
@@ -90,6 +91,7 @@ export default function NoteSettings({
   initialTtlMinutes,
   initialProtected,
   expiresAt,
+  disabled = false,
   onApply,
 }: NoteSettingsProps) {
   const [open, setOpen] = useState(false)
@@ -170,6 +172,7 @@ export default function NoteSettings({
         <Button
           variant="ghost"
           size="icon"
+          disabled={disabled}
           className="fixed top-3 left-3 z-20 bg-background/80 backdrop-blur border shadow-sm"
           title="Configurações da nota"
         >

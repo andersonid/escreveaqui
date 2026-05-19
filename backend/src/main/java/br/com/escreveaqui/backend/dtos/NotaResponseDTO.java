@@ -8,5 +8,6 @@ public record NotaResponseDTO(
         OffsetDateTime updatedAt,
         Long ttlMinutes,
         OffsetDateTime expiresAt,
-        boolean isProtected
+        boolean isProtected,
+        boolean expired
 ) {}

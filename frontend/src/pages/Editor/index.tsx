@@ -6,6 +6,7 @@ import EditorLineGutter from "@/components/EditorLineGutter"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import AccessDialog from "@/components/AccessDialog"
+import ExpiredNoteDialog from "@/components/ExpiredNoteDialog"
 import type { Nota } from "@/interface/nota"
 import debounce from "lodash.debounce"
 import type { DebouncedFunc } from "lodash"
@@ -32,6 +33,8 @@ export default function Editor() {
   const [loaded, setLoaded] = useState(false)
   const [readOnly, setReadOnly] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
+  const [noteExpired, setNoteExpired] = useState(false)
+  const [allowNewOnSlug, setAllowNewOnSlug] = useState(false)
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
@@ -65,6 +68,17 @@ export default function Editor() {
         })
         settingsRef.current.ttlMinutes = nota.ttlMinutes
 
+        if (nota.expired && !allowNewOnSlug) {
+          setNoteExpired(true)
+          setText("")
+          setNeedsAuth(false)
+          setReadOnly(true)
+          setLoaded(true)
+          return
+        }
+
+        setNoteExpired(false)
+
         if (nota.isProtected && nota.content === null) {
           setText("")
           setNeedsAuth(true)
@@ -93,25 +107,27 @@ export default function Editor() {
         }
       }
     },
-    [slug]
+    [slug, allowNewOnSlug]
   )
 
   useEffect(() => {
     if (!slug) return
     sessionStorage.removeItem(`escreveaqui:token:${slug}`)
     setAccessToken(undefined)
+    setAllowNewOnSlug(false)
+    setNoteExpired(false)
     setLoaded(false)
     void loadNote()
   }, [slug, loadNote])
 
   useEffect(() => {
-    if (!slug || !loaded || needsAuth || isTyping) return
+    if (!slug || !loaded || needsAuth || isTyping || (noteExpired && !allowNewOnSlug)) return
 
     const interval = setInterval(() => {
       void loadNote(accessToken)
     }, 2000)
     return () => clearInterval(interval)
-  }, [slug, loaded, needsAuth, isTyping, accessToken, loadNote])
+  }, [slug, loaded, needsAuth, isTyping, noteExpired, allowNewOnSlug, accessToken, loadNote])
 
   const saveToBackend: DebouncedFunc<(content: string) => void> = useMemo(
     () =>
@@ -129,6 +145,16 @@ export default function Editor() {
       saveToBackend.cancel()
     }
   }, [saveToBackend])
+
+  const handleCreateNewOnSlug = () => {
+    setAllowNewOnSlug(true)
+    setNoteExpired(false)
+    setReadOnly(false)
+    setText("")
+    settingsRef.current.ttlMinutes = null
+    setNoteMeta({ ttlMinutes: null, expiresAt: null, isProtected: false })
+    window.setTimeout(() => textareaRef.current?.focus(), 0)
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (readOnly) return
@@ -151,12 +177,22 @@ export default function Editor() {
     setText("")
     try {
       const nota = await notaService.getBySlug(slug, token)
+      if (nota.expired) {
+        setNoteExpired(true)
+        setAllowNewOnSlug(false)
+        setText("")
+        setReadOnly(true)
+        setNeedsAuth(false)
+        setLoaded(true)
+        return
+      }
       if (nota.isProtected && nota.content === null) {
         setAuthError("Senha incorreta")
         setNeedsAuth(true)
         setReadOnly(true)
         return
       }
+      setNoteExpired(false)
       setAccessToken(token)
       setNoteMeta({
         ttlMinutes: nota.ttlMinutes,
@@ -249,10 +285,11 @@ export default function Editor() {
         initialTtlMinutes={noteMeta.ttlMinutes}
         initialProtected={noteMeta.isProtected}
         expiresAt={noteMeta.expiresAt}
+        disabled={noteExpired && !allowNewOnSlug}
         onApply={handleSettingsApply}
       />
 
-      {noteMeta.isProtected && !needsAuth && (
+      {noteMeta.isProtected && !needsAuth && !noteExpired && (
         <div
           className="fixed top-3 right-3 z-20 flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 shadow-sm backdrop-blur dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
           role="status"
@@ -265,7 +302,7 @@ export default function Editor() {
 
       <div className="absolute inset-0 flex flex-col pt-14">
         <div className="flex min-h-0 flex-1">
-          {!needsAuth && (
+          {!needsAuth && !(noteExpired && !allowNewOnSlug) && (
             <div
               ref={gutterRef}
               className="shrink-0 overflow-hidden border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none [scrollbar-width:none]"
@@ -281,10 +318,12 @@ export default function Editor() {
             placeholder={
               needsAuth
                 ? "Informe a senha para editar esta nota"
-                : `Escrevendo em: ${slug}`
+                : noteExpired && !allowNewOnSlug
+                  ? "Esta nota expirou"
+                  : `Escrevendo em: ${slug}`
             }
-            readOnly={readOnly || needsAuth}
-            autoFocus={!needsAuth}
+            readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
+            autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
             className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
             style={{ caretColor: BR_COLORS[caretIndex] }}
           />
@@ -297,6 +336,12 @@ export default function Editor() {
         error={authError}
         loading={authLoading}
         onSubmit={handleAuthSubmit}
+      />
+
+      <ExpiredNoteDialog
+        slug={slug}
+        open={noteExpired && !allowNewOnSlug}
+        onCreateNew={handleCreateNewOnSlug}
       />
     </div>
   )

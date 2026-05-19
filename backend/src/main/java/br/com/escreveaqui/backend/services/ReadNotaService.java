@@ -44,8 +44,20 @@ public class ReadNotaService {
         String safeSlug = UpsertNotaService.makeSlug(slug);
 
         return notaRepository.findBySlug(safeSlug)
-                .filter(nota -> !NoteExpiration.isExpired(nota))
                 .map(nota -> {
+                    if (NoteExpiration.isExpired(nota)) {
+                        missCounter.increment();
+                        log.debug("Nota expirada: slug='{}'", safeSlug);
+                        return new NotaResponseDTO(
+                                nota.getSlug(),
+                                null,
+                                nota.getUpdatedAt(),
+                                null,
+                                null,
+                                false,
+                                true
+                        );
+                    }
                     hitCounter.increment();
                     log.debug("Nota encontrada: slug='{}'", safeSlug);
                     return toResponse(nota, token);
@@ -53,7 +65,7 @@ public class ReadNotaService {
                 .orElseGet(() -> {
                     missCounter.increment();
                     log.debug("Nota não encontrada, retornando vazia: slug='{}'", safeSlug);
-                    return new NotaResponseDTO(safeSlug, "", OffsetDateTime.now(), null, null, false);
+                    return new NotaResponseDTO(safeSlug, "", OffsetDateTime.now(), null, null, false, false);
                 });
     }
 
@@ -66,7 +78,8 @@ public class ReadNotaService {
                         nota.getUpdatedAt(),
                         nota.getTtlMinutes(),
                         nota.getExpiresAt(),
-                        true
+                        true,
+                        false
                 );
             }
             if (!passwordEncoder.matches(token, nota.getAccessTokenHash())) {
@@ -80,7 +93,8 @@ public class ReadNotaService {
                 nota.getUpdatedAt(),
                 nota.getTtlMinutes(),
                 nota.getExpiresAt(),
-                nota.isProtected()
+                nota.isProtected(),
+                false
         );
     }
 }

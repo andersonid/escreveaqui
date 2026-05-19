@@ -5,4 +5,5 @@ export interface Nota {
     ttlMinutes: number | null;
     expiresAt: string | null;
     isProtected: boolean;
+    expired?: boolean;
 }

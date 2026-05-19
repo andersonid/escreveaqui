@@ -11,7 +11,7 @@ import type { Nota } from "@/interface/nota"
 import debounce from "lodash.debounce"
 import type { DebouncedFunc } from "lodash"
 
-const BR_COLORS = ["#009c3b", "#ffdf00", "#002776"]
+const CARET_COLORS = ["#c9190b", "#ffdf00", "#002776"]
 const INACTIVITY_TIMEOUT = 2000
 const AUTO_SAVE_DELAY = 1000
 
@@ -51,7 +51,7 @@ export default function Editor() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCaretIndex((prev) => (prev + 1) % BR_COLORS.length)
+      setCaretIndex((prev) => (prev + 1) % CARET_COLORS.length)
     }, 800)
     return () => clearInterval(interval)
   }, [])
@@ -325,7 +325,7 @@ export default function Editor() {
             readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
             autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
             className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-[18px] leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
-            style={{ caretColor: BR_COLORS[caretIndex] }}
+            style={{ caretColor: CARET_COLORS[caretIndex] }}
           />
         </div>
       </div>

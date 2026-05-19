@@ -4,17 +4,17 @@
 
 @layer base {
   :root {
-    /* Cores da bandeira do Brasil */
-    --color-green-flag: #009c3b;
+    /* Acento da UI + cores do cursor (vermelho, amarelo, azul) */
+    --color-red-accent: #c9190b;
     --color-yellow-flag: #ffdf00;
     --color-blue-flag: #002776;
-    --color-selection: rgba(0, 156, 59, 0.2);
+    --color-selection: rgba(201, 25, 11, 0.2);
 
-    /* Tema Shadcn — mapeado às cores brasileiras */
+    /* Tema Shadcn */
     --background: 40 14% 97%;
     --foreground: 0 0% 11%;
 
-    --primary: 148 65% 26%;
+    --primary: 4 90% 42%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 52 100% 50%;
@@ -31,7 +31,7 @@
 
     --border: 0 0% 89%;
     --input: 0 0% 89%;
-    --ring: 148 65% 26%;
+    --ring: 4 90% 42%;
 
     --radius: 0.375rem;
   }

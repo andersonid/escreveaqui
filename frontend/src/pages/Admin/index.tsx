@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input"
 import PasswordInput from "@/components/PasswordInput"
 import AdminNoteEditDialog from "@/components/AdminNoteEditDialog"
 import AdminChangePasswordDialog from "@/components/AdminChangePasswordDialog"
+import AdminNotesTable from "@/components/AdminNotesTable"
 import type { AdminNote } from "@/interface/admin"
 import { adminService, adminSession } from "@/services/adminService"
-import { formatDateTime, formatRemaining, formatTtlMinutes } from "@/lib/noteTime"
 
 export default function Admin() {
   const [loggedIn, setLoggedIn] = useState(adminSession.isLoggedIn())
@@ -150,80 +150,18 @@ export default function Admin() {
         </div>
       </header>
 
-      <main className="p-4 overflow-x-auto">
+      <main className="p-4 max-w-[100vw]">
         {listError && (
           <p className="text-sm text-destructive mb-4" role="alert">
             {listError}
           </p>
         )}
-        {loadingNotes && notes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Carregando notas…</p>
-        ) : notes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma nota na base.</p>
-        ) : (
-          <table className="w-full min-w-[1100px] text-sm border-collapse">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 pr-3 font-medium">Slug</th>
-                <th className="py-2 pr-3 font-medium">Criada</th>
-                <th className="py-2 pr-3 font-medium">Última edição</th>
-                <th className="py-2 pr-3 font-medium">IP criação</th>
-                <th className="py-2 pr-3 font-medium">IP última edição</th>
-                <th className="py-2 pr-3 font-medium">Prazo (TTL)</th>
-                <th className="py-2 pr-3 font-medium">Expira em</th>
-                <th className="py-2 pr-3 font-medium">Falta</th>
-                <th className="py-2 pr-3 font-medium">Protegida</th>
-                <th className="py-2 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notes.map((note) => (
-                <tr key={note.id} className="border-b border-border/60 hover:bg-muted/30">
-                  <td className="py-2 pr-3 font-mono">
-                    <Link
-                      to={`/${note.slug}`}
-                      className="text-primary hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {note.slug}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-3 whitespace-nowrap">{formatDateTime(note.createdAt)}</td>
-                  <td className="py-2 pr-3 whitespace-nowrap">{formatDateTime(note.updatedAt)}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">{note.createdClientIp ?? "—"}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">{note.lastClientIp ?? "—"}</td>
-                  <td className="py-2 pr-3">{formatTtlMinutes(note.ttlMinutes)}</td>
-                  <td className="py-2 pr-3 whitespace-nowrap">
-                    {formatDateTime(note.expiresAt)}
-                  </td>
-                  <td className="py-2 pr-3">
-                    {note.expired ? (
-                      <span className="text-destructive">Expirada</span>
-                    ) : (
-                      formatRemaining(note.expiresAt)
-                    )}
-                  </td>
-                  <td className="py-2 pr-3">{note.isProtected ? "Sim" : "Não"}</td>
-                  <td className="py-2 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setEditNote(note)}>
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => void handleDelete(note)}
-                      >
-                        Apagar
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <AdminNotesTable
+          notes={notes}
+          loading={loadingNotes}
+          onEdit={setEditNote}
+          onDelete={(note) => void handleDelete(note)}
+        />
       </main>
 
       <AdminNoteEditDialog

@@ -1,9 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text
-    x="50"
-    y="50"
-    text-anchor="middle"
-    dominant-baseline="central"
-    font-size="72"
-  >>w</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="escreveaqui">
+  <rect width="32" height="32" rx="7" fill="#c9190b"/>
+  <!-- máscara ninja -->
+  <path
+    d="M5 15c0-4 5-7 11-7s11 3 11 7v3c0 5-5 9-11 9s-11-4-11-9v-3z"
+    fill="#1c1917"
+  />
+  <!-- faixa -->
+  <path d="M6 14h20" stroke="#f7f7f5" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="24" cy="13" r="2.2" fill="#f7f7f5"/>
+  <!-- olhos -->
+  <ellipse cx="11.5" cy="17" rx="2.8" ry="1.6" fill="#f7f7f5"/>
+  <ellipse cx="20.5" cy="17" rx="2.8" ry="1.6" fill="#f7f7f5"/>
 </svg>

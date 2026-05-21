@@ -20,6 +20,12 @@ export function formatTtlMinutes(minutes: number | null | undefined): string {
   return `${minutes} minuto(s)`
 }
 
+/** Milissegundos até expirar; null se sem expiração; negativo se já passou. */
+export function remainingMs(expiresAt: string | null | undefined): number | null {
+  if (!expiresAt) return null
+  return new Date(expiresAt).getTime() - Date.now()
+}
+
 export function formatRemaining(expiresAt: string | null | undefined): string {
   if (!expiresAt) return "—"
   const end = new Date(expiresAt).getTime()

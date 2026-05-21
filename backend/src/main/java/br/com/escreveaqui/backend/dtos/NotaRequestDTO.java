@@ -1,5 +1,6 @@
 package br.com.escreveaqui.backend.dtos;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record NotaRequestDTO(
@@ -7,6 +8,7 @@ public record NotaRequestDTO(
         String content,
         Long ttlMinutes,
         Boolean configureExpiration,
-        @Size(min = 4, max = 64, message = "Token deve ter entre 4 e 64 caracteres")
+        /** Vazio remove proteção; null não altera senha; 4–64 caracteres define ou troca senha. */
+        @Pattern(regexp = "^$|^.{4,64}$", message = "Token deve ter entre 4 e 64 caracteres")
         String accessToken
 ) {}

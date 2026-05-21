@@ -231,7 +231,9 @@ export default function Editor() {
 
     let accessTokenPayload: string | null | undefined = undefined
     if (!settings.protectionEnabled) {
-      accessTokenPayload = ""
+      if (noteMeta.isProtected) {
+        accessTokenPayload = ""
+      }
     } else if (settings.accessPassword.trim()) {
       accessTokenPayload = settings.accessPassword.trim()
     }

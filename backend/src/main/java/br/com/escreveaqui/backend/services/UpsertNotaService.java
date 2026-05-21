@@ -50,7 +50,8 @@ public class UpsertNotaService {
             Long ttlMinutes,
             boolean configureExpiration,
             String accessToken,
-            String token
+            String token,
+            String clientIp
     ) {
         String safeSlug = makeSlug(slug);
 
@@ -62,6 +63,13 @@ public class UpsertNotaService {
 
         Nota nota = existing.orElseGet(() -> Nota.builder().slug(safeSlug).build());
         boolean isNew = nota.getId() == null;
+
+        if (clientIp != null && !clientIp.isBlank()) {
+            if (isNew) {
+                nota.setCreatedClientIp(clientIp);
+            }
+            nota.setLastClientIp(clientIp);
+        }
 
         if (!isNew && nota.isProtected() && !isTokenValid(token, nota.getAccessTokenHash())) {
             throw new NoteAccessDeniedException();

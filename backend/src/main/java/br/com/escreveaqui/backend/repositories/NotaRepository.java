@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,4 +25,11 @@ public interface NotaRepository extends JpaRepository<Nota, UUID> {
     int deleteExpiredNotes(@Param("now") OffsetDateTime now);
 
     boolean existsBySlug(String slug);
+
+    @Transactional(readOnly = true)
+    List<Nota> findAllByOrderByUpdatedAtDesc();
+
+    @Modifying
+    @Transactional
+    void deleteBySlug(String slug);
 }

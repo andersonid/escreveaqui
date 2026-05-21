@@ -4,6 +4,8 @@ import br.com.escreveaqui.backend.dtos.NotaRequestDTO;
 import br.com.escreveaqui.backend.dtos.NotaResponseDTO;
 import br.com.escreveaqui.backend.services.ReadNotaService;
 import br.com.escreveaqui.backend.services.UpsertNotaService;
+import br.com.escreveaqui.backend.support.ClientIpResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class NotaController {
 
     private final ReadNotaService readService;
     private final UpsertNotaService upsertService;
+    private final ClientIpResolver clientIpResolver;
 
     private static final String SLUG_REGEX = "^[A-Za-z0-9_\\s-]+$";
 
@@ -34,7 +37,8 @@ public class NotaController {
     public ResponseEntity<Void> upsert(
             @PathVariable @Pattern(regexp = SLUG_REGEX) String slug,
             @RequestBody @Valid NotaRequestDTO request,
-            @RequestHeader(value = "X-Note-Token", required = false) String token
+            @RequestHeader(value = "X-Note-Token", required = false) String token,
+            HttpServletRequest httpRequest
     ) {
         upsertService.execute(
                 slug,
@@ -42,7 +46,8 @@ public class NotaController {
                 request.ttlMinutes(),
                 Boolean.TRUE.equals(request.configureExpiration()),
                 request.accessToken(),
-                token
+                token,
+                clientIpResolver.resolve(httpRequest)
         );
         return ResponseEntity.noContent().build();
     }

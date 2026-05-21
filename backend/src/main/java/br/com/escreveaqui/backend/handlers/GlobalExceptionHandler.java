@@ -1,5 +1,7 @@
 package br.com.escreveaqui.backend.handlers;
 
+import br.com.escreveaqui.backend.exceptions.AdminNotFoundException;
+import br.com.escreveaqui.backend.exceptions.AdminUnauthorizedException;
 import br.com.escreveaqui.backend.exceptions.NoteAccessDeniedException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,22 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(AdminUnauthorizedException.class)
+    public ProblemDetail handleAdminUnauthorized(AdminUnauthorizedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        problem.setTitle("Não autorizado");
+        problem.setDetail("Credenciais inválidas ou sessão expirada.");
+        return problem;
+    }
+
+    @ExceptionHandler(AdminNotFoundException.class)
+    public ProblemDetail handleAdminNotFound(AdminNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setTitle("Não encontrado");
+        problem.setDetail(ex.getMessage());
+        return problem;
+    }
 
     @ExceptionHandler(NoteAccessDeniedException.class)
     public ProblemDetail handleAccessDenied(NoteAccessDeniedException ex) {

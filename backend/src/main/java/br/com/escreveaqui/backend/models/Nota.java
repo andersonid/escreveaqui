@@ -47,6 +47,12 @@ public class Nota {
     @Column(nullable = true, length = 72)
     private String accessTokenHash;
 
+    @Column(nullable = true, length = 45)
+    private String createdClientIp;
+
+    @Column(nullable = true, length = 45)
+    private String lastClientIp;
+
     @Version
     private Long version;
 

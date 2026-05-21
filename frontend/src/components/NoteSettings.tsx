@@ -42,7 +42,7 @@ export function ttlMinutesFromParts(enabled: boolean, value: number, unit: TtlUn
   return value * multipliers[unit]
 }
 
-function partsFromTtlMinutes(ttlMinutes: number | null): Pick<NoteSettingsState, "expirationEnabled" | "ttlValue" | "ttlUnit"> {
+export function partsFromTtlMinutes(ttlMinutes: number | null): Pick<NoteSettingsState, "expirationEnabled" | "ttlValue" | "ttlUnit"> {
   if (!ttlMinutes || ttlMinutes <= 0) {
     return { expirationEnabled: false, ttlValue: 30, ttlUnit: "days" }
   }

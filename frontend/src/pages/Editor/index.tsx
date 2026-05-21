@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom"
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
-import EditorLineGutter from "@/components/EditorLineGutter"
+import EditorLineGutter, { EDITOR_WRAP_CLASS } from "@/components/EditorLineGutter"
+import { useTextareaContentWidth } from "@/hooks/useTextareaContentWidth"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import AccessDialog from "@/components/AccessDialog"
@@ -40,6 +41,7 @@ export default function Editor() {
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
+  const contentWidth = useTextareaContentWidth(textareaRef)
 
   const syncGutterScroll = useCallback(() => {
     const ta = textareaRef.current
@@ -309,7 +311,7 @@ export default function Editor() {
               ref={gutterRef}
               className="shrink-0 overflow-hidden border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none [scrollbar-width:none]"
             >
-              <EditorLineGutter text={text} />
+              <EditorLineGutter text={text} contentWidth={contentWidth} />
             </div>
           )}
           <Textarea
@@ -326,7 +328,7 @@ export default function Editor() {
             }
             readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
             autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
-            className="min-h-0 flex-1 h-full resize-none border-none rounded-none font-sans text-base leading-6 py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+            className={`min-h-0 flex-1 h-full resize-none border-none rounded-none py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] ${EDITOR_WRAP_CLASS}`}
             style={{ caretColor: CARET_COLORS[caretIndex] }}
           />
         </div>

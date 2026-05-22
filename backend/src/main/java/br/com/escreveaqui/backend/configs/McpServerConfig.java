@@ -11,7 +11,6 @@ import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.WebMvcStreamableServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.ai.mcp.McpToolUtils;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,10 +29,9 @@ public class McpServerConfig {
 
     @Bean
     WebMvcStreamableServerTransportProvider mcpTransportProvider(
-            ObjectMapper objectMapper,
             @Value("${springdoc.ai.mcp.mcp-endpoint:/mcp}") String mcpEndpoint) {
         return WebMvcStreamableServerTransportProvider.builder()
-                .jsonMapper(new JacksonMcpJsonMapper(objectMapper))
+                .jsonMapper(new JacksonMcpJsonMapper(new ObjectMapper()))
                 .mcpEndpoint(mcpEndpoint)
                 .build();
     }

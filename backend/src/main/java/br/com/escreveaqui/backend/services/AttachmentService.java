@@ -65,11 +65,22 @@ public class AttachmentService {
         List<AttachmentDTO> result = new ArrayList<>();
 
         for (Attachment att : all) {
-            String relativePath = att.getVirtualPath().substring(normalizedPrefix.length());
+            // Pular a própria pasta atual (virtualPath == prefix)
+            if (att.isFolder() && att.getVirtualPath().equals(normalizedPrefix)) {
+                continue;
+            }
 
-            if (att.isFolder() && att.getVirtualPath().equals(normalizedPrefix + att.getDisplayName() + "/")) {
-                result.add(toDTO(att));
-                immediateItems.add(att.getDisplayName());
+            String relativePath = att.getVirtualPath().substring(normalizedPrefix.length());
+            if (relativePath.isEmpty()) {
+                continue;
+            }
+
+            // Pasta filha direta: relativePath = "nome/"
+            if (att.isFolder() && !relativePath.contains("/") ||
+                    (att.isFolder() && relativePath.endsWith("/") && relativePath.indexOf('/') == relativePath.length() - 1)) {
+                if (immediateItems.add(att.getDisplayName())) {
+                    result.add(toDTO(att));
+                }
                 continue;
             }
 

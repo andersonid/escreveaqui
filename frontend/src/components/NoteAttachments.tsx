@@ -126,12 +126,10 @@ export default function NoteAttachments({
   }
 
   const navigateBack = () => {
-    setPathStack((prev) => {
-      const next = [...prev]
-      const parent = next.pop() ?? ""
-      setCurrentPrefix(parent)
-      return next
-    })
+    const newStack = [...pathStack]
+    const parent = newStack.pop() ?? ""
+    setPathStack(newStack)
+    setCurrentPrefix(parent)
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

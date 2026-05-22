@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Settings, CheckCircle2 } from "lucide-react"
+import { Settings, CheckCircle2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import PasswordInput from "@/components/PasswordInput"
@@ -253,9 +253,15 @@ export default function NoteSettings({
             )}
 
             {expirationEnabled && previewTtl && (
-              <p className="text-xs text-muted-foreground">
-                Após {previewTtl} minuto(s) sem edição, a nota é apagada. Editar renova o prazo.
-              </p>
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  Após {previewTtl} minuto(s) sem edição, a nota é apagada. Editar renova o prazo.
+                </p>
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>Ao expirar, a nota e todos os seus anexos serão removidos permanentemente.</span>
+                </div>
+              </div>
             )}
             {expiresAt && expirationEnabled && (
               <p className="text-xs text-muted-foreground">

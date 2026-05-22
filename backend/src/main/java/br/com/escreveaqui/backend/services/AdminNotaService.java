@@ -17,6 +17,7 @@ import java.util.List;
 public class AdminNotaService {
 
     private final NotaRepository notaRepository;
+    private final AttachmentService attachmentService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -44,10 +45,10 @@ public class AdminNotaService {
     @Transactional
     public void deleteBySlug(String slug) {
         String safeSlug = UpsertNotaService.makeSlug(slug);
-        if (!notaRepository.existsBySlug(safeSlug)) {
-            throw new AdminNotFoundException("Nota não encontrada");
-        }
-        notaRepository.deleteBySlug(safeSlug);
+        Nota nota = notaRepository.findBySlug(safeSlug)
+                .orElseThrow(() -> new AdminNotFoundException("Nota não encontrada"));
+        attachmentService.purgeAllForNote(nota.getId());
+        notaRepository.delete(nota);
     }
 
     private void applyAccessToken(Nota nota, String accessToken) {

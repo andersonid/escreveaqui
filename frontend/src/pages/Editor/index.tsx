@@ -6,6 +6,7 @@ import EditorLineGutter, { EDITOR_WRAP_CLASS } from "@/components/EditorLineGutt
 import { useTextareaContentWidth } from "@/hooks/useTextareaContentWidth"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
+import NoteAttachments from "@/components/NoteAttachments"
 import AccessDialog from "@/components/AccessDialog"
 import ExpiredNoteDialog from "@/components/ExpiredNoteDialog"
 import type { Nota } from "@/interface/nota"
@@ -291,6 +292,14 @@ export default function Editor() {
         expiresAt={noteMeta.expiresAt}
         disabled={noteExpired && !allowNewOnSlug}
         onApply={handleSettingsApply}
+      />
+
+      <NoteAttachments
+        slug={slug}
+        accessToken={accessToken}
+        disabled={!loaded || needsAuth || (noteExpired && !allowNewOnSlug)}
+        ttlMinutes={noteMeta.ttlMinutes}
+        expiresAt={noteMeta.expiresAt}
       />
 
       {noteMeta.isProtected && !needsAuth && !noteExpired && (

@@ -19,6 +19,10 @@ public interface NotaRepository extends JpaRepository<Nota, UUID> {
     @Transactional(readOnly = true)
     Optional<Nota> findBySlug(String slug);
 
+    @Transactional(readOnly = true)
+    @Query("SELECT n FROM Nota n WHERE n.expiresAt IS NOT NULL AND n.expiresAt < :now")
+    List<Nota> findExpiredNotes(@Param("now") OffsetDateTime now);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM Nota n WHERE n.expiresAt IS NOT NULL AND n.expiresAt < :now")

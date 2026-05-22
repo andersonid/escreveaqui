@@ -15,6 +15,7 @@ resources:
   - frontend-service.yaml
   - api-docs-auth-middleware.yaml
   - api-docs-auth-sealed-secret.yaml
+  - s3-sealed-secret.yaml
   - ingressroute.yaml
 
 images:

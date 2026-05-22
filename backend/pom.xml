@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<springdoc.version>3.0.3</springdoc.version>
+		<awssdk.version>2.41.24</awssdk.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -102,6 +103,11 @@
 			<groupId>io.modelcontextprotocol.sdk</groupId>
 			<artifactId>mcp-spring-webmvc</artifactId>
 			<version>0.17.0</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>${awssdk.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

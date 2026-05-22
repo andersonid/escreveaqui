@@ -9,6 +9,8 @@ export interface AdminNote {
   expiresAt: string | null
   isProtected: boolean
   expired: boolean
+  attachmentCount: number
+  attachmentSizeBytes: number
 }
 
 export interface AdminLoginResponse {

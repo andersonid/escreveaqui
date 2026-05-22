@@ -12,6 +12,8 @@ export type SortKey =
   | "remaining"
   | "isProtected"
   | "expired"
+  | "attachmentCount"
+  | "attachmentSizeBytes"
 
 export type SortDir = "asc" | "desc"
 
@@ -30,6 +32,7 @@ export function buildNoteSearchText(note: AdminNote): string {
     formatRemaining(note.expiresAt),
     note.isProtected ? "protegida sim" : "protegida não",
     note.expired ? "expirada" : "ativa",
+    note.attachmentCount > 0 ? `${note.attachmentCount} anexo anexos` : "sem anexos",
   ]
   return parts.filter(Boolean).join(" ").toLowerCase()
 }
@@ -68,6 +71,10 @@ function sortValue(note: AdminNote, key: SortKey): string | number | boolean {
       return note.isProtected ? 1 : 0
     case "expired":
       return note.expired ? 1 : 0
+    case "attachmentCount":
+      return note.attachmentCount
+    case "attachmentSizeBytes":
+      return note.attachmentSizeBytes
   }
 }
 

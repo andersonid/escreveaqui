@@ -36,8 +36,17 @@ const COLUMNS: Column[] = [
   { key: "expiresAt", label: "Expira em" },
   { key: "remaining", label: "Falta (TTL)" },
   { key: "isProtected", label: "Protegida" },
+  { key: "attachmentCount", label: "Anexos" },
   { key: null, label: "Ações" },
 ]
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B"
+  const k = 1024
+  const sizes = ["B", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
 
 type Props = {
   notes: AdminNote[]
@@ -178,7 +187,7 @@ export default function AdminNotesTable({ notes, loading, onEdit, onDelete }: Pr
 
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-12rem)]">
-          <table className="w-full min-w-[1100px] text-sm border-collapse">
+          <table className="w-full min-w-[1200px] text-sm border-collapse">
             <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80 border-b">
               <tr className="text-left text-muted-foreground">
                 {COLUMNS.map((col) =>
@@ -253,6 +262,17 @@ export default function AdminNotesTable({ notes, loading, onEdit, onDelete }: Pr
                       )}
                     </td>
                     <td className="py-2 px-3">{note.isProtected ? "Sim" : "Não"}</td>
+                    <td className="py-2 px-3 whitespace-nowrap text-xs">
+                      {note.attachmentCount > 0 ? (
+                        <span title={formatBytes(note.attachmentSizeBytes)}>
+                          <span className="font-medium">{note.attachmentCount}</span>
+                          {" · "}
+                          {formatBytes(note.attachmentSizeBytes)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="py-2 px-3 whitespace-nowrap">
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => onEdit(note)}>

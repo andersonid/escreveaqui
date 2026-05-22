@@ -13,5 +13,7 @@ public record AdminNoteListItemDTO(
         Long ttlMinutes,
         OffsetDateTime expiresAt,
         boolean isProtected,
-        boolean expired
+        boolean expired,
+        long attachmentCount,
+        long attachmentSizeBytes
 ) {}

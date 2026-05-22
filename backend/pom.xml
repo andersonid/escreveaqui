@@ -99,6 +99,11 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>io.modelcontextprotocol.sdk</groupId>
+			<artifactId>mcp-spring-webmvc</artifactId>
+			<version>0.17.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>

@@ -107,22 +107,24 @@ public class AttachmentService {
         String virtualPath = folder + request.fileName();
         String s3Key = buildS3Key(nota.getId(), virtualPath);
 
+        String resolvedContentType = request.contentType() != null ? request.contentType() : "application/octet-stream";
+
         Attachment attachment = Attachment.builder()
                 .nota(nota)
                 .s3Key(s3Key)
                 .displayName(request.fileName())
                 .virtualPath(virtualPath)
                 .sizeBytes(request.fileSize())
-                .contentType(request.contentType() != null ? request.contentType() : "application/octet-stream")
+                .contentType(resolvedContentType)
                 .folder(false)
                 .build();
-        attachment = attachmentRepository.save(attachment);
+        Attachment saved = attachmentRepository.save(attachment);
 
         Duration ttl = Duration.ofMinutes(presignedTtlMinutes);
         var presignRequest = PutObjectPresignRequest.builder()
                 .signatureDuration(ttl)
                 .putObjectRequest(b -> b.bucket(bucket).key(s3Key)
-                        .contentType(attachment.getContentType()))
+                        .contentType(resolvedContentType))
                 .build();
 
         String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
@@ -131,7 +133,7 @@ public class AttachmentService {
                 slug, request.fileName(), request.fileSize());
 
         return new UploadUrlResponseDTO(
-                attachment.getId(),
+                saved.getId(),
                 uploadUrl,
                 s3Key,
                 ttl.toSeconds());

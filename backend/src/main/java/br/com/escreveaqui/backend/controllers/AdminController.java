@@ -5,13 +5,17 @@ import br.com.escreveaqui.backend.services.AdminAuthService;
 import br.com.escreveaqui.backend.services.AdminNotaService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.ai.annotations.McpIgnore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@McpIgnore
+@Tag(name = "Admin", description = "Painel administrativo — não exposto como tools MCP")
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor

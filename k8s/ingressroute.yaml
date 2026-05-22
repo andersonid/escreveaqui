@@ -7,6 +7,19 @@ spec:
   entryPoints:
     - websecure
   routes:
+    - match: Host(`escreveaqui.nobre.ninja`) && (PathPrefix(`/v3/api-docs`) || PathPrefix(`/swagger-ui`) || PathPrefix(`/mcp`))
+      kind: Rule
+      priority: 30
+      middlewares:
+        - name: api-docs-auth
+          namespace: escreveaqui
+        - name: security-headers
+          namespace: kube-system
+        - name: rate-limit
+          namespace: kube-system
+      services:
+        - name: escreveaqui-backend
+          port: 8080
     - match: Host(`escreveaqui.nobre.ninja`) && PathPrefix(`/api`)
       kind: Rule
       priority: 20

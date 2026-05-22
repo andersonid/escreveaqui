@@ -13,6 +13,8 @@ resources:
   - backend-service.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml
+  - api-docs-auth-middleware.yaml
+  - api-docs-auth-sealed-secret.yaml
   - ingressroute.yaml
 
 images:

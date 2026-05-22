@@ -146,7 +146,9 @@ API disponível em: `http://localhost:8080`
 
 ## 🔌 API
 
-A documentação completa da API está em [doc/API.md](doc/API.md).
+- Resumo e regras de negócio: [doc/API.md](doc/API.md)
+- **OpenAPI / Swagger UI:** `/v3/api-docs` e `/swagger-ui.html` (springdoc no backend)
+- **MCP (Model Context Protocol):** `/mcp` — ver [doc/MCP.md](doc/MCP.md)
 
 Resumo dos endpoints:
 

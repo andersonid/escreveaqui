@@ -1,176 +1,119 @@
-# 🔌 Documentação da API — Escreve Aqui
+# Documentação da API — EscreveAqui
 
-Base URL: `http://localhost:8080` (desenvolvimento)
+## Contrato canônico (OpenAPI)
 
-Todos os endpoints estão sob o prefixo `/api/v1/notes`.
+O backend gera o contrato automaticamente com **springdoc-openapi**:
+
+| Ambiente | OpenAPI JSON | Swagger UI |
+|----------|--------------|------------|
+| Produção | `https://escreveaqui.nobre.ninja/v3/api-docs` | `https://escreveaqui.nobre.ninja/swagger-ui.html` |
+| Local | `http://localhost:8080/v3/api-docs` | `http://localhost:8080/swagger-ui.html` |
+
+Em produção, Swagger/OpenAPI/MCP exigem **Basic Auth** no Traefik (ver [MCP.md](./MCP.md)). A API de notas em `/api/v1/notes` permanece pública no Ingress.
 
 ---
 
-## Formato do Slug
+## Base URL da API de notas
 
-O slug é o identificador único de uma nota — ele aparece diretamente na URL.
+`/api/v1/notes` — prefixo dos endpoints públicos do editor.
 
-**Regras de validação (entrada):**
+---
 
-- Caracteres permitidos: letras (a-z, A-Z), números (0-9), espaços, hífens (`-`) e underscores (`_`)
-- O backend normaliza automaticamente o slug antes de salvar:
-  - Converte para minúsculas
-  - Remove acentos
-  - Substitui espaços por hífens
-  - Remove hífens duplicados e nas extremidades
+## Formato do slug
 
-**Exemplo:**
+O slug é o identificador único de uma nota — aparece na URL pública (`/{slug}`).
+
+**Validação (entrada):** letras, números, espaços, `-` e `_`. O backend normaliza (minúsculas, sem acentos, espaços → hífens).
 
 | Slug enviado | Slug salvo |
-|---|---|
+|--------------|------------|
 | `Minha Nota` | `minha-nota` |
 | `résumé` | `resume` |
-| `--test--` | `test` |
 
 ---
 
-## Endpoints
+## GET `/api/v1/notes/{slug}`
 
-### GET `/api/v1/notes/{slug}`
+Lê conteúdo e metadados da nota.
 
-Retorna o conteúdo de uma nota pelo slug.
+**Header opcional:** `X-Note-Token` — senha, se a nota estiver protegida.
 
-**Parâmetros de rota:**
-
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `slug` | string | sim | Identificador da nota |
-
-**Resposta de sucesso — `200 OK`:**
+**Resposta `200`:**
 
 ```json
 {
   "slug": "minha-nota",
-  "content": "Conteúdo da nota aqui.",
-  "updatedAt": "2025-04-18T14:30:00Z"
+  "content": "Texto",
+  "updatedAt": "2025-04-18T14:30:00Z",
+  "ttlMinutes": 43200,
+  "expiresAt": "2025-05-18T14:30:00Z",
+  "isProtected": false,
+  "expired": false
 }
 ```
 
-> **Nota:** se o slug não existir, o endpoint retorna `200 OK` com `content` vazio e `updatedAt` igual ao momento da requisição. Isso permite que o frontend trate "nota nova" e "nota existente" de forma transparente.
+Slug inexistente → `200` com `content` vazio (nota nova no frontend).
 
-**Resposta de slug inválido — `400 Bad Request`:**
+---
+
+## PUT `/api/v1/notes/{slug}`
+
+Cria ou atualiza nota (idempotente). Resposta **`204 No Content`**.
+
+**Header opcional:** `X-Note-Token` — obrigatório se a nota já está protegida.
+
+**Corpo JSON:**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `content` | string | Texto (máx. 1 MB) |
+| `configureExpiration` | boolean | `true` para aplicar/remover política de TTL |
+| `ttlMinutes` | number \| null | Com `configureExpiration: true`: minutos até expirar; `null` ou `0` = sem expiração |
+| `accessToken` | string \| omitido | `""` remove proteção; `null`/omitido não altera senha; 4–64 chars define/troca senha |
+
+**Exemplo — só conteúdo (autosave):**
+
+```json
+{ "content": "Olá" }
+```
+
+**Exemplo — expiração 30 dias + senha:**
 
 ```json
 {
-  "type": "about:blank",
-  "title": "Requisição inválida",
-  "status": 400,
-  "detail": "read.slug: deve corresponder a \"^[A-Za-z0-9_\\s-]+$\""
+  "content": "Texto",
+  "configureExpiration": true,
+  "ttlMinutes": 43200,
+  "accessToken": "minha-senha-secreta"
 }
 ```
 
 ---
 
-### PUT `/api/v1/notes/{slug}`
+## API Admin
 
-Cria ou atualiza uma nota. A operação é idempotente.
-
-**Parâmetros de rota:**
-
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `slug` | string | sim | Identificador da nota |
-
-**Corpo da requisição (`application/json`):**
-
-```json
-{
-  "content": "Conteúdo da nota."
-}
-```
-
-| Campo | Tipo | Obrigatório | Limite |
-|---|---|---|---|
-| `content` | string | não | máx. 1.000.000 caracteres (~1 MB) |
-
-**Resposta de sucesso — `204 No Content`**
-
-Sem corpo de resposta.
-
-**Resposta de corpo inválido — `400 Bad Request`:**
-
-```json
-{
-  "type": "about:blank",
-  "title": "Corpo da requisição inválido",
-  "status": 400,
-  "detail": "content: tamanho deve ser entre 0 e 1000000"
-}
-```
-
-**Resposta de conflito de escrita simultânea — `409 Conflict`:**
-
-```json
-{
-  "type": "about:blank",
-  "title": "Conflito de edição",
-  "status": 409,
-  "detail": "A nota foi modificada por outra sessão. Tente novamente."
-}
-```
+Prefixo `/api/v1/admin` — painel `/admin`, Bearer após login. Documentada no Swagger (tag Admin), **excluída** das tools MCP.
 
 ---
 
-## Respostas de Erro
-
-Todos os erros seguem o formato [RFC 9457 (Problem Details)](https://www.rfc-editor.org/rfc/rfc9457):
-
-```json
-{
-  "type": "about:blank",
-  "title": "Descrição curta do erro",
-  "status": 400,
-  "detail": "Mensagem detalhada sobre o problema."
-}
-```
+## Erros (RFC 9457)
 
 | Status | Situação |
-|---|---|
-| `400` | Slug inválido ou corpo da requisição fora dos limites |
-| `409` | Conflito de escrita simultânea ou violação de unicidade |
-| `500` | Erro interno inesperado |
+|--------|----------|
+| `400` | Validação (slug, corpo) |
+| `403` | Nota protegida — token inválido |
+| `409` | Conflito de versão otimista |
+| `500` | Erro interno |
 
 ---
 
-## Cache
+## MCP
 
-Leituras (`GET`) são cacheadas in-process com **Caffeine**:
-
-- **TTL:** 30 segundos após a escrita
-- **Capacidade:** até 500 notas em memória
-- **Invalidação:** o cache da nota é invalidado imediatamente após qualquer `PUT` bem-sucedido
+Agentes IA: endpoint `/mcp` (Streamable HTTP), tools geradas a partir desta API (somente notas). Detalhes: [MCP.md](./MCP.md).
 
 ---
 
-## CORS
+## Cache, CORS
 
-Por padrão, apenas `http://localhost:5173` é aceito como origem.
-
-Em produção, configure a variável de ambiente `ALLOWED_ORIGINS`:
-
-```bash
-ALLOWED_ORIGINS=https://escreveaqui.com.br,https://www.escreveaqui.com.br
-```
-
----
-
-## Exemplo de uso (curl)
-
-**Criar ou atualizar uma nota:**
-
-```bash
-curl -X PUT http://localhost:8080/api/v1/notes/minha-nota \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Olá, mundo!"}'
-```
-
-**Ler uma nota:**
-
-```bash
-curl http://localhost:8080/api/v1/notes/minha-nota
-```
+- **Cache:** Caffeine nas leituras GET (TTL 30s; invalidação no PUT).
+- **CORS:** `ALLOWED_ORIGINS` (produção: `https://escreveaqui.nobre.ninja`).

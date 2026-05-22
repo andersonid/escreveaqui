@@ -3,6 +3,7 @@ package br.com.escreveaqui.backend.configs;
 import java.util.Arrays;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
@@ -31,7 +32,8 @@ public class McpServerConfig {
     WebMvcStreamableServerTransportProvider mcpTransportProvider(
             @Value("${springdoc.ai.mcp.mcp-endpoint:/mcp}") String mcpEndpoint) {
         return WebMvcStreamableServerTransportProvider.builder()
-                .jsonMapper(new JacksonMcpJsonMapper(new ObjectMapper()))
+                .jsonMapper(new JacksonMcpJsonMapper(
+                        new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)))
                 .mcpEndpoint(mcpEndpoint)
                 .build();
     }

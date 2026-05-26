@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 /** Deve coincidir com leading-6 do textarea (24px). */
 export const EDITOR_LINE_HEIGHT_PX = 24
@@ -24,13 +24,13 @@ export function lineCountFromText(text: string): number {
   return splitLogicalLines(text).length
 }
 
-export default function EditorLineGutter({
+export default memo(function EditorLineGutter({
   text,
   contentWidth,
   className,
 }: EditorLineGutterProps) {
   const lines = useMemo(() => splitLogicalLines(text), [text])
-  const measureRefs = useRef<(HTMLDivElement | null)[]>([])
+  const mirrorRef = useRef<HTMLDivElement>(null)
   const [lineHeights, setLineHeights] = useState<number[]>(() =>
     lines.map(() => EDITOR_LINE_HEIGHT_PX)
   )
@@ -40,9 +40,20 @@ export default function EditorLineGutter({
       setLineHeights(lines.map(() => EDITOR_LINE_HEIGHT_PX))
       return
     }
-    setLineHeights(
-      lines.map((_, i) => measureRefs.current[i]?.offsetHeight ?? EDITOR_LINE_HEIGHT_PX)
-    )
+    const container = mirrorRef.current
+    if (!container) return
+    const children = container.children
+    const next: number[] = new Array(lines.length)
+    for (let i = 0; i < lines.length; i++) {
+      next[i] = (children[i] as HTMLElement)?.offsetHeight ?? EDITOR_LINE_HEIGHT_PX
+    }
+    setLineHeights((prev) => {
+      for (let i = 0; i < next.length; i++) {
+        if (prev[i] !== next[i]) return next
+      }
+      if (prev.length !== next.length) return next
+      return prev
+    })
   }, [text, lines, contentWidth])
 
   const lineCount = lines.length
@@ -50,21 +61,15 @@ export default function EditorLineGutter({
 
   return (
     <>
-      {/* Espelho invisível: mesma largura e wrap do textarea para altura por linha lógica. */}
       {contentWidth > 0 && (
         <div
+          ref={mirrorRef}
           aria-hidden
           className="pointer-events-none invisible absolute left-0 top-0 -z-50 overflow-hidden"
           style={{ width: contentWidth }}
         >
           {lines.map((line, i) => (
-            <div
-              key={i}
-              ref={(el) => {
-                measureRefs.current[i] = el
-              }}
-              className={EDITOR_WRAP_CLASS}
-            >
+            <div key={i} className={EDITOR_WRAP_CLASS}>
               {line.length === 0 ? "\u00a0" : line}
             </div>
           ))}
@@ -84,4 +89,4 @@ export default function EditorLineGutter({
       </div>
     </>
   )
-}
+})

@@ -59,6 +59,9 @@ export default function Editor() {
     return () => clearInterval(interval)
   }, [])
 
+  const textRef = useRef(text)
+  textRef.current = text
+
   const loadNote = useCallback(
     async (token?: string) => {
       if (!slug) return
@@ -94,7 +97,14 @@ export default function Editor() {
         setAuthError(null)
         setReadOnly(false)
         if (nota.content !== null && nota.content !== undefined) {
-          setText(nota.content)
+          if (nota.content !== textRef.current) {
+            const ta = textareaRef.current
+            const prevScroll = ta?.scrollTop ?? 0
+            setText(nota.content)
+            if (ta) {
+              requestAnimationFrame(() => { ta.scrollTop = prevScroll })
+            }
+          }
         }
         setLoaded(true)
       } catch (err) {

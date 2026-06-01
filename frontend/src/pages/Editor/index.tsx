@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import EditorLineGutter, { EDITOR_WRAP_CLASS } from "@/components/EditorLineGutter"
@@ -41,16 +41,16 @@ export default function Editor() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const gutterRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const contentWidth = useTextareaContentWidth(textareaRef)
 
-  const syncGutterScroll = useCallback(() => {
+  useLayoutEffect(() => {
     const ta = textareaRef.current
-    const gutter = gutterRef.current
-    if (ta && gutter) {
-      gutter.scrollTop = ta.scrollTop
-    }
-  }, [])
+    const container = scrollContainerRef.current
+    if (!ta || !container) return
+    ta.style.height = "0px"
+    ta.style.height = `${Math.max(ta.scrollHeight, container.clientHeight)}px`
+  }, [text, contentWidth])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -98,11 +98,11 @@ export default function Editor() {
         setReadOnly(false)
         if (nota.content !== null && nota.content !== undefined) {
           if (nota.content !== textRef.current) {
-            const ta = textareaRef.current
-            const prevScroll = ta?.scrollTop ?? 0
+            const container = scrollContainerRef.current
+            const prevScroll = container?.scrollTop ?? 0
             setText(nota.content)
-            if (ta) {
-              requestAnimationFrame(() => { ta.scrollTop = prevScroll })
+            if (container) {
+              requestAnimationFrame(() => { container.scrollTop = prevScroll })
             }
           }
         }
@@ -324,12 +324,12 @@ export default function Editor() {
       )}
 
       <div className="absolute inset-0 flex flex-col pt-14">
-        <div className="flex min-h-0 flex-1">
+        <div
+          ref={scrollContainerRef}
+          className="flex min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
+        >
           {!needsAuth && !(noteExpired && !allowNewOnSlug) && (
-            <div
-              ref={gutterRef}
-              className="shrink-0 overflow-hidden border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none [scrollbar-width:none]"
-            >
+            <div className="shrink-0 border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none">
               <EditorLineGutter text={text} contentWidth={contentWidth} />
             </div>
           )}
@@ -337,7 +337,6 @@ export default function Editor() {
             ref={textareaRef}
             value={needsAuth ? "" : text}
             onChange={handleChange}
-            onScroll={syncGutterScroll}
             placeholder={
               needsAuth
                 ? "Informe a senha para editar esta nota"
@@ -347,7 +346,7 @@ export default function Editor() {
             }
             readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
             autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
-            className={`min-h-0 flex-1 h-full resize-none border-none rounded-none py-5 pl-3 pr-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] ${EDITOR_WRAP_CLASS}`}
+            className={`flex-1 resize-none border-none rounded-none py-5 pl-3 pr-5 overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 ${EDITOR_WRAP_CLASS}`}
             style={{ caretColor: CARET_COLORS[caretIndex] }}
           />
         </div>

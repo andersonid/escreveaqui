@@ -1,9 +1,7 @@
 import { useParams } from "react-router-dom"
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
-import EditorLineGutter, { EDITOR_WRAP_CLASS } from "@/components/EditorLineGutter"
-import { useTextareaContentWidth } from "@/hooks/useTextareaContentWidth"
+import CodeEditor from "@/components/CodeEditor"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import NoteAttachments from "@/components/NoteAttachments"
@@ -13,7 +11,6 @@ import type { Nota } from "@/interface/nota"
 import debounce from "lodash.debounce"
 import type { DebouncedFunc } from "lodash"
 
-const CARET_COLORS = ["#c9190b", "#ffdf00", "#002776"]
 const INACTIVITY_TIMEOUT = 2000
 const AUTO_SAVE_DELAY = 1000
 
@@ -23,7 +20,6 @@ export default function Editor() {
 
   const [text, setText] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [caretIndex, setCaretIndex] = useState(0)
   const [noteMeta, setNoteMeta] = useState<Pick<Nota, "ttlMinutes" | "expiresAt" | "isProtected">>({
     ttlMinutes: null,
     expiresAt: null,
@@ -40,24 +36,6 @@ export default function Editor() {
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const contentWidth = useTextareaContentWidth(textareaRef)
-
-  useLayoutEffect(() => {
-    const ta = textareaRef.current
-    const container = scrollContainerRef.current
-    if (!ta || !container) return
-    ta.style.height = "0px"
-    ta.style.height = `${Math.max(ta.scrollHeight, container.clientHeight)}px`
-  }, [text, contentWidth])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCaretIndex((prev) => (prev + 1) % CARET_COLORS.length)
-    }, 800)
-    return () => clearInterval(interval)
-  }, [])
 
   const textRef = useRef(text)
   textRef.current = text
@@ -98,12 +76,7 @@ export default function Editor() {
         setReadOnly(false)
         if (nota.content !== null && nota.content !== undefined) {
           if (nota.content !== textRef.current) {
-            const container = scrollContainerRef.current
-            const prevScroll = container?.scrollTop ?? 0
             setText(nota.content)
-            if (container) {
-              requestAnimationFrame(() => { container.scrollTop = prevScroll })
-            }
           }
         }
         setLoaded(true)
@@ -166,22 +139,23 @@ export default function Editor() {
     setText("")
     settingsRef.current.ttlMinutes = null
     setNoteMeta({ ttlMinutes: null, expiresAt: null, isProtected: false })
-    window.setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (readOnly) return
-    const newText = e.target.value
-    setText(newText)
-    setIsTyping(true)
+  const handleChange = useCallback(
+    (newText: string) => {
+      if (readOnly) return
+      setText(newText)
+      setIsTyping(true)
 
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
-    }, INACTIVITY_TIMEOUT)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false)
+      }, INACTIVITY_TIMEOUT)
 
-    saveToBackend(newText)
-  }
+      saveToBackend(newText)
+    },
+    [readOnly, saveToBackend]
+  )
 
   const handleAuthSubmit = async (token: string) => {
     if (!slug) return
@@ -293,6 +267,8 @@ export default function Editor() {
     return null
   }
 
+  const showEditor = !needsAuth && !(noteExpired && !allowNewOnSlug)
+
   return (
     <div className="w-full h-screen bg-background relative">
       <NoteSettings
@@ -323,33 +299,16 @@ export default function Editor() {
         </div>
       )}
 
-      <div className="absolute inset-0 flex flex-col pt-14">
-        <div
-          ref={scrollContainerRef}
-          className="flex min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]"
-        >
-          {!needsAuth && !(noteExpired && !allowNewOnSlug) && (
-            <div className="shrink-0 border-r border-border/30 bg-muted/20 py-5 pl-2.5 pr-1.5 text-right font-sans text-[11px] tabular-nums text-muted-foreground/70 select-none">
-              <EditorLineGutter text={text} contentWidth={contentWidth} />
-            </div>
-          )}
-          <Textarea
-            ref={textareaRef}
-            value={needsAuth ? "" : text}
+      <div className="absolute inset-0 pt-14">
+        {showEditor && (
+          <CodeEditor
+            value={text}
             onChange={handleChange}
-            placeholder={
-              needsAuth
-                ? "Informe a senha para editar esta nota"
-                : noteExpired && !allowNewOnSlug
-                  ? "Esta nota expirou"
-                  : `Escrevendo em: ${slug}`
-            }
-            readOnly={readOnly || needsAuth || (noteExpired && !allowNewOnSlug)}
-            autoFocus={!needsAuth && !(noteExpired && !allowNewOnSlug)}
-            className={`flex-1 resize-none border-none rounded-none py-5 pl-3 pr-5 overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 ${EDITOR_WRAP_CLASS}`}
-            style={{ caretColor: CARET_COLORS[caretIndex] }}
+            readOnly={readOnly}
+            placeholder={`Escrevendo em: ${slug}`}
+            autoFocus
           />
-        </div>
+        )}
       </div>
 
       <AccessDialog

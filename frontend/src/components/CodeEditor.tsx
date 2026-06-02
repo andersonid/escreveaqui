@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, lineNumbers, drawSelection, placeholder as cmPlaceholder, keymap } from "@codemirror/view"
 import { EditorState, Compartment } from "@codemirror/state"
-import { indentWithTab } from "@codemirror/language"
+import { indentWithTab } from "@codemirror/commands"
 
 const CARET_COLORS = ["#c9190b", "#ffdf00", "#002776"]
 

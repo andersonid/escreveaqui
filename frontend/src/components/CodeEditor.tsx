@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, lineNumbers, drawSelection, placeholder as cmPlaceholder, keymap } from "@codemirror/view"
 import { EditorState, Compartment } from "@codemirror/state"
-import { indentWithTab } from "@codemirror/commands"
+import { defaultKeymap, indentWithTab, history, historyKeymap } from "@codemirror/commands"
 
 const CARET_COLORS = ["#c9190b", "#ffdf00", "#002776"]
 
@@ -113,7 +113,8 @@ export default function CodeEditor({
         EditorView.lineWrapping,
         readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
         editableComp.current.of(EditorView.editable.of(!readOnly)),
-        keymap.of([indentWithTab]),
+        history(),
+        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         escreveaquiTheme,
         updateListener,
       ],

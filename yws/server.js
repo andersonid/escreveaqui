@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import WebSocket from 'ws'
 import http from 'http'
 import * as Y from 'yjs'

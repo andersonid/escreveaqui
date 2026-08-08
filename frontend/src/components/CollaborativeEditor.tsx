@@ -87,7 +87,7 @@ const escreveaquiTheme = EditorView.theme({
     padding: "1px 4px",
     borderRadius: "3px",
     opacity: "0.9",
-    transitionDelay: "1s",
+    transitionDelay: "2s",
     transitionProperty: "opacity",
   },
 })

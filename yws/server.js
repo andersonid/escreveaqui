@@ -9,6 +9,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://escreveaqui-backend:8080'
 const HOST = process.env.HOST || '::'
 const PORT = parseInt(process.env.PORT || '1234', 10)
 const SAVE_DEBOUNCE_MS = parseInt(process.env.SAVE_DEBOUNCE_MS || '3000', 10)
+const VERSION = '1.0.0'
 
 const saveTimers = new Map()
 const roomTokens = new Map()
@@ -83,8 +84,8 @@ const wss = new WebSocket.Server({ noServer: true })
 wss.on('connection', setupWSConnection)
 
 const server = http.createServer((_req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' })
-  res.end('ok')
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify({ status: 'ok', version: VERSION }))
 })
 
 server.on('upgrade', async (req, socket, head) => {

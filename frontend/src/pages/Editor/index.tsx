@@ -2,6 +2,8 @@ import { useParams } from "react-router-dom"
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Lock } from "lucide-react"
 import CodeEditor from "@/components/CodeEditor"
+import CollaborativeEditor from "@/components/CollaborativeEditor"
+import PresenceBadge from "@/components/PresenceBadge"
 import { notaService } from "@/services/notaService"
 import NoteSettings, { ttlMinutesFromParts, type NoteSettingsState } from "@/components/NoteSettings"
 import NoteAttachments from "@/components/NoteAttachments"
@@ -33,6 +35,8 @@ export default function Editor() {
   const [authLoading, setAuthLoading] = useState(false)
   const [noteExpired, setNoteExpired] = useState(false)
   const [allowNewOnSlug, setAllowNewOnSlug] = useState(false)
+  const [useCollab, setUseCollab] = useState(true)
+  const [onlineCount, setOnlineCount] = useState(0)
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const settingsRef = useRef({ ttlMinutes: null as number | null, accessToken: undefined as string | undefined })
@@ -107,13 +111,14 @@ export default function Editor() {
   }, [slug, loadNote])
 
   useEffect(() => {
+    if (useCollab) return
     if (!slug || !loaded || needsAuth || isTyping || (noteExpired && !allowNewOnSlug)) return
 
     const interval = setInterval(() => {
       void loadNote(accessToken)
     }, 2000)
     return () => clearInterval(interval)
-  }, [slug, loaded, needsAuth, isTyping, noteExpired, allowNewOnSlug, accessToken, loadNote])
+  }, [slug, loaded, needsAuth, isTyping, noteExpired, allowNewOnSlug, accessToken, loadNote, useCollab])
 
   const saveToBackend: DebouncedFunc<(content: string) => void> = useMemo(
     () =>
@@ -299,8 +304,28 @@ export default function Editor() {
         </div>
       )}
 
+      {showEditor && onlineCount > 0 && <PresenceBadge count={onlineCount} />}
+
       <div className="absolute inset-0 pt-14">
-        {showEditor && (
+        {showEditor && useCollab ? (
+          <CollaborativeEditor
+            slug={slug}
+            token={accessToken}
+            readOnly={readOnly}
+            placeholder={`Escrevendo em: ${slug}`}
+            autoFocus
+            onFallback={() => {
+              setUseCollab(false)
+              setOnlineCount(0)
+              void loadNote(accessToken)
+            }}
+            onContentChange={(content) => {
+              textRef.current = content
+              setText(content)
+            }}
+            onPresenceChange={setOnlineCount}
+          />
+        ) : showEditor ? (
           <CodeEditor
             value={text}
             onChange={handleChange}
@@ -308,7 +333,7 @@ export default function Editor() {
             placeholder={`Escrevendo em: ${slug}`}
             autoFocus
           />
-        )}
+        ) : null}
       </div>
 
       <AccessDialog

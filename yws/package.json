@@ -1,0 +1,13 @@
+{
+  "name": "escreveaqui-yws",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "yjs": "^13.6.0",
+    "@y/websocket-server": "^0.1.5"
+  }
+}

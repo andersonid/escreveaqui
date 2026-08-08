@@ -16,6 +16,8 @@ resources:
   - api-docs-auth-middleware.yaml
   - api-docs-auth-sealed-secret.yaml
   - s3-sealed-secret.yaml
+  - yws-deployment.yaml
+  - yws-service.yaml
   - ingressroute.yaml
 
 images:
@@ -24,4 +26,7 @@ images:
     newTag: placeholder
   - name: escreveaqui-frontend
     newName: registry.registry.svc.cluster.local:5000/nobre-ninja/escreveaqui-frontend
+    newTag: placeholder
+  - name: escreveaqui-yws
+    newName: registry.registry.svc.cluster.local:5000/nobre-ninja/escreveaqui-yws
     newTag: placeholder

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: escreveaqui-yws
+  namespace: escreveaqui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: escreveaqui-yws
+  template:
+    metadata:
+      labels:
+        app: escreveaqui-yws
+    spec:
+      containers:
+        - name: yws
+          image: escreveaqui-yws:placeholder
+          ports:
+            - containerPort: 1234
+          env:
+            - name: HOST
+              value: "::"
+            - name: PORT
+              value: "1234"
+            - name: BACKEND_URL
+              value: http://escreveaqui-backend:8080
+            - name: SAVE_DEBOUNCE_MS
+              value: "3000"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 1234
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 1234
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 1234
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

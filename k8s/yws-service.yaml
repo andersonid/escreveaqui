@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: escreveaqui-yws
+  namespace: escreveaqui
+spec:
+  selector:
+    app: escreveaqui-yws
+  ports:
+    - port: 1234
+      targetPort: 1234

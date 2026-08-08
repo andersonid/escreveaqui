@@ -20,6 +20,12 @@ spec:
       services:
         - name: escreveaqui-backend
           port: 8080
+    - match: Host(`escreveaqui.nobre.ninja`) && PathPrefix(`/ws`)
+      kind: Rule
+      priority: 25
+      services:
+        - name: escreveaqui-yws
+          port: 1234
     - match: Host(`escreveaqui.nobre.ninja`) && PathPrefix(`/api`)
       kind: Rule
       priority: 20

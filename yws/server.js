@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import WebSocket from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import http from 'http'
 import * as Y from 'yjs'
 import * as syncProtocol from 'y-protocols/sync'
@@ -217,7 +217,7 @@ async function saveNoteContent(slug, content) {
   }
 }
 
-const wss = new WebSocket.Server({ noServer: true })
+const wss = new WebSocketServer({ noServer: true })
 
 const server = http.createServer((_req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' })

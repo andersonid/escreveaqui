@@ -226,7 +226,7 @@ const server = http.createServer((_req, res) => {
 
 server.on('upgrade', async (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`)
-  const slug = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '')
+  const slug = url.pathname.replace(/^\/ws\//, '/').replace(/^\/+/, '').replace(/\/+$/, '')
   const token = url.searchParams.get('token') || undefined
 
   if (!slug) {

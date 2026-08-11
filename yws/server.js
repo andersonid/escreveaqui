@@ -6,12 +6,14 @@ import * as syncProtocol from 'y-protocols/sync'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as encoding from 'lib0/encoding'
 import * as decoding from 'lib0/decoding'
+import pg from 'pg'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://escreveaqui-backend:8080'
+const DATABASE_URL = process.env.DATABASE_URL || ''
 const HOST = process.env.HOST || '::'
 const PORT = parseInt(process.env.PORT || '1234', 10)
 const SAVE_DEBOUNCE_MS = parseInt(process.env.SAVE_DEBOUNCE_MS || '3000', 10)
-const VERSION = '1.0.0'
+const VERSION = '1.2.0'
 
 const MSG_SYNC = 0
 const MSG_AWARENESS = 1
@@ -28,6 +30,7 @@ class Room {
     this.conns = new Map()
     this.loaded = false
     this._loadPromise = null
+    this.lastSavedContent = null
 
     this.awareness.on('update', ({ added, updated, removed }, conn) => {
       const changedClients = added.concat(updated, removed)
@@ -56,7 +59,9 @@ class Room {
       this.conns.forEach((_, c) => {
         if (c !== origin) send(c, msg)
       })
-      this._debouncedSave()
+      if (origin !== 'external') {
+        this._debouncedSave()
+      }
     })
   }
 
@@ -76,10 +81,23 @@ class Room {
           ytext.insert(0, content)
         })
       }
+      this.lastSavedContent = content || ''
     } catch (err) {
       console.error(`[load] ${this.name}: ${err.message}`)
+      this.lastSavedContent = ''
     }
     this.loaded = true
+  }
+
+  applyExternalContent(newContent) {
+    const ytext = this.doc.getText('content')
+    const current = ytext.toString()
+    if (newContent === current) return
+    this.lastSavedContent = newContent
+    this.doc.transact(() => {
+      ytext.delete(0, ytext.length)
+      if (newContent) ytext.insert(0, newContent)
+    }, 'external')
   }
 
   _debouncedSave() {
@@ -89,6 +107,7 @@ class Room {
       setTimeout(() => {
         saveTimers.delete(this.name)
         const text = this.doc.getText('content').toString()
+        this.lastSavedContent = text
         saveNoteContent(this.name, text)
       }, SAVE_DEBOUNCE_MS)
     )
@@ -217,6 +236,48 @@ async function saveNoteContent(slug, content) {
   }
 }
 
+// --- PostgreSQL LISTEN/NOTIFY ---
+
+async function startPgListener() {
+  if (!DATABASE_URL) {
+    console.warn('[pg] DATABASE_URL não configurada — LISTEN/NOTIFY desativado')
+    return
+  }
+
+  const client = new pg.Client({ connectionString: DATABASE_URL })
+
+  client.on('error', (err) => {
+    console.error(`[pg] conexão perdida: ${err.message}`)
+    setTimeout(startPgListener, 3000)
+  })
+
+  try {
+    await client.connect()
+    await client.query('LISTEN nota_updated')
+    console.log('[pg] LISTEN nota_updated ativo')
+
+    client.on('notification', async (msg) => {
+      const slug = msg.payload
+      const room = docs.get(slug)
+      if (!room || !room.loaded) return
+
+      try {
+        const content = await fetchNoteContent(slug, roomTokens.get(slug))
+        if (content !== room.lastSavedContent) {
+          room.applyExternalContent(content)
+        }
+      } catch (err) {
+        console.error(`[pg-notify] ${slug}: ${err.message}`)
+      }
+    })
+  } catch (err) {
+    console.error(`[pg] falha ao conectar: ${err.message}`)
+    setTimeout(startPgListener, 5000)
+  }
+}
+
+// --- HTTP + WebSocket server ---
+
 const wss = new WebSocketServer({ noServer: true })
 
 const server = http.createServer((_req, res) => {
@@ -260,5 +321,6 @@ server.on('upgrade', async (req, socket, head) => {
 })
 
 server.listen(PORT, HOST, () => {
-  console.log(`escreveaqui-yws running on ${HOST}:${PORT}`)
+  console.log(`escreveaqui-yws v${VERSION} running on ${HOST}:${PORT}`)
+  startPgListener()
 })

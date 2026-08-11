@@ -1,6 +1,6 @@
 {
   "name": "escreveaqui-yws",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "ws": "^8.18.0",
     "yjs": "^13.6.0",
     "y-protocols": "^1.0.6",
-    "lib0": "^0.2.98"
+    "lib0": "^0.2.98",
+    "pg": "^8.13.0"
   }
 }

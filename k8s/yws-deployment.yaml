@@ -27,6 +27,23 @@ spec:
               value: http://escreveaqui-backend:8080
             - name: SAVE_DEBOUNCE_MS
               value: "3000"
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@escreveaqui-db:5432/$(POSTGRES_DB)"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: escreveaqui-db
+                  key: POSTGRES_DB
           startupProbe:
             httpGet:
               path: /

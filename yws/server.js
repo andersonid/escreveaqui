@@ -13,7 +13,7 @@ const DATABASE_URL = process.env.DATABASE_URL || ''
 const HOST = process.env.HOST || '::'
 const PORT = parseInt(process.env.PORT || '1234', 10)
 const SAVE_DEBOUNCE_MS = parseInt(process.env.SAVE_DEBOUNCE_MS || '3000', 10)
-const VERSION = '1.2.1'
+const VERSION = '1.3.0'
 
 const MSG_SYNC = 0
 const MSG_AWARENESS = 1
@@ -258,13 +258,19 @@ async function startPgListener() {
 
     client.on('notification', async (msg) => {
       const slug = msg.payload
+      console.log(`[pg-notify] recebido: slug="${slug}", rooms ativas: [${Array.from(docs.keys()).join(', ')}]`)
       const room = docs.get(slug)
-      if (!room || !room.loaded) return
+      if (!room || !room.loaded) {
+        console.log(`[pg-notify] ${slug}: room não encontrada ou não carregada, ignorando`)
+        return
+      }
 
       try {
         const content = await fetchNoteContent(slug, roomTokens.get(slug))
+        console.log(`[pg-notify] ${slug}: conteúdo DB (${content.length} chars) vs lastSaved (${(room.lastSavedContent || '').length} chars), iguais=${content === room.lastSavedContent}`)
         if (content !== room.lastSavedContent) {
           room.applyExternalContent(content)
+          console.log(`[pg-notify] ${slug}: conteúdo externo aplicado no Y.Doc`)
         }
       } catch (err) {
         console.error(`[pg-notify] ${slug}: ${err.message}`)
@@ -313,9 +319,13 @@ server.on('upgrade', async (req, socket, head) => {
     const room = getOrCreateRoom(slug)
     await room.load()
     room.addConn(ws)
+    console.log(`[ws] ${slug}: conexão aberta (total: ${room.conns.size})`)
 
     ws.on('message', (data) => room.onMessage(ws, data))
-    ws.on('close', () => room.removeConn(ws))
+    ws.on('close', () => {
+      room.removeConn(ws)
+      console.log(`[ws] ${slug}: conexão fechada (restam: ${room.conns.size})`)
+    })
     ws.on('error', () => room.removeConn(ws))
   })
 })

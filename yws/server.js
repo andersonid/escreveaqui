@@ -13,7 +13,7 @@ const DATABASE_URL = process.env.DATABASE_URL || ''
 const HOST = process.env.HOST || '::'
 const PORT = parseInt(process.env.PORT || '1234', 10)
 const SAVE_DEBOUNCE_MS = parseInt(process.env.SAVE_DEBOUNCE_MS || '3000', 10)
-const VERSION = '1.2.0'
+const VERSION = '1.2.1'
 
 const MSG_SYNC = 0
 const MSG_AWARENESS = 1
